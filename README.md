@@ -56,6 +56,30 @@ case class KVPair(name: String, value: Int)
 
 With reactive mongo's BSON implementation, you must create bsonDocument readers and writers... A datastructure like this may have these classes:
 ``` scala
+object PersonDocumentTranslator extends BSONDocumentReader[Person] with BSONDocumentWriter[Person] {
+  implicit val barTranslator = ContainerDocumentTranslator
+  implicit val fooBarTranslator = OccupationDocumentTranslator
+
+  def read(bson: BSONDocument): Person = {
+    Person(
+      bson.getAs[String]("id").get,
+      bson.getAs[String]("name").get,
+      bson.getAs[List[Container]]("stuff").get,
+      bson.getAs[Occupation]("some_option")
+    )
+  }
+
+  def write(foo: Person): BSONDocument = {
+    BSONDocument(
+      "id" -> foo.id,
+      "name" -> foo.name,
+      "stuff" -> foo.stuff,
+      "job" -> foo.job
+    )
+  }
+}
+
+
 object ContainerDocumentTranslator extends BSONDocumentReader[Container] with BSONDocumentWriter[Container] {
   implicit val kvPairTranslator = KVPairDocumentTranslator
 
