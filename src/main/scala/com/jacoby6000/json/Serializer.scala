@@ -10,10 +10,8 @@ import _root_.reactivemongo.bson.BSONNull
 import _root_.reactivemongo.bson.BSONObjectID
 import _root_.reactivemongo.bson.BSONString
 import _root_.reactivemongo.bson.BSONValue
-import org.json4s.JsonAST
-import org.json4s.JsonAST.JValue
-import org.json4s.MappingException
 import org.json4s._
+import org.json4s.JsonAST.JValue
 
 import scala.util.Try
 
@@ -22,102 +20,123 @@ import scala.util.Try
  */
 object Serializer {
 
-  def deserialize: PartialFunction[JValue, BSONValue] = {
+  def jValueToBSONValue: PartialFunction[JValue, BSONValue] = {
     case obj: JObject =>
-      deserializeJObject(obj)
+      jObjectToBSONValue(obj)
     case arr: JArray =>
-      deserializeJArray(arr)
+      jArrayToBSONValue(arr)
 
     case int: JInt =>
-      deserializeJInt(int)
+      jIntToBSONValue(int)
     case decimal: JDecimal =>
-      deserializeJDecimal(decimal)
+      jDecimalToBSONValue(decimal)
     case double: JDouble =>
-      deserializeJDouble(double)
+      jDoubleToBSONValue(double)
 
     case bool: JBool  =>
-      deserializeJBool(bool)
+      jBoolToBSONValue(bool)
     case str: JString =>
-      deserializeJString(str)
-
-    case x: JValue  if x == JNothing || x == JNull =>
+      jStringToBSONValue(str)
+    case JNothing =>
+      BSONNull
+    case JNull =>
       BSONNull
 
   }
 
-  def deserializeJBool(bool: JBool): BSONBoolean = {
+  def jBoolToBSONValue(bool: JBool): BSONBoolean = {
     BSONBoolean(bool.value)
   }
 
-  def deserializeJDouble(double: JDouble): BSONDouble = {
+  def jDoubleToBSONValue(double: JDouble): BSONDouble = {
     BSONDouble(double.num)
   }
 
-  def deserializeJInt(int: JInt): BSONLong = {
+  def jIntToBSONValue(int: JInt): BSONLong = {
     BSONLong(int.num.toLong)
   }
 
-  def deserializeJDecimal(decimal: JDecimal): BSONDouble = {
+  def jDecimalToBSONValue(decimal: JDecimal): BSONDouble = {
     BSONDouble(decimal.num.toDouble)
   }
 
-  def deserializeJString(str: JString): BSONString = {
+  def jStringToBSONValue(str: JString): BSONString = {
     BSONString(str.s)
   }
 
-  def deserializeJArray(arr: JArray): BSONArray = {
+  def jArrayToBSONValue(arr: JArray): BSONArray = {
     BSONArray(arr.productIterator.toStream.map { x =>
       Try(x match {
         case item: JValue =>
-          deserialize(item)
+          jValueToBSONValue(item)
         case x: Any =>
           throw new MappingException("Failed to serialize " + x.toString)
       })
     })
   }
 
-  def deserializeJObject(obj: JObject): BSONDocument = {
+  def jObjectToBSONValue(obj: JObject): BSONDocument = {
     BSONDocument(obj.values.map(x => x.copy(
       x._1,
       x._2 match {
-        case v1: JValue => deserialize(v1)
+        case v1: JValue => jValueToBSONValue(v1)
         case _ => throw new MappingException("No usable value for " + x._1)
       })))
   }
 
-  def serialize: PartialFunction[Any, JValue] = {
-    case BSONDocument(list) =>
-      serializeBSONDocument(list)
+  def bsonValueToJValue: PartialFunction[Any, JValue] = {
+    case doc: BSONDocument =>
+      bsonDocumentToJValue(doc)
     case arr: BSONArray =>
-      serializeBSONArray(arr)
+      bsonArrayToJValue(arr)
     case int: BSONInteger =>
-      serializeBSONInteger(int)
+      bsonIntegerToJValue(int)
     case double: BSONDouble =>
-      JDouble(double.value)
+      bsonDoubleToJValue(double)
     case long: BSONLong =>
-      JInt(long.value)
+      bsonLongToJValue(long)
     case bool: BSONBoolean =>
-      JBool(bool.value)
+      bsonBooleanToJValue(bool)
     case BSONNull =>
       JNull
     case obj: BSONObjectID =>
-      JString(obj.toString())
+      bsonObjectIdToJValue(obj)
     case str: BSONString =>
-      JString(str.value)
+      bsonStringToJValue(str)
   }
 
-  def serializeBSONInteger(int: BSONInteger): JsonAST.JInt = {
+  def bsonStringToJValue(str: BSONString): JsonAST.JString = {
+    JString(str.value)
+  }
+
+  def bsonObjectIdToJValue(obj: BSONObjectID): JsonAST.JString = {
+    JString(obj.toString())
+  }
+
+  def bsonBooleanToJValue(bool: BSONBoolean): JsonAST.JBool = {
+    JBool(bool.value)
+  }
+
+  def bsonDoubleToJValue(double: BSONDouble): JsonAST.JDouble = {
+    JDouble(double.value)
+  }
+
+  def bsonLongToJValue(long: BSONLong): JsonAST.JInt = {
+    JInt(long.value)
+  }
+
+  def bsonIntegerToJValue(int: BSONInteger): JInt = {
     JInt(int.value)
   }
 
-  def serializeBSONArray(arr: BSONArray): JsonAST.JArray = {
-    JArray(arr.values.map(serialize).toList)
+  def bsonArrayToJValue(arr: BSONArray): JArray = {
+    JArray(arr.values.map(bsonValueToJValue).toList)
   }
 
-  def serializeBSONDocument(list: Stream[Try[(String, BSONValue)]]): JsonAST.JObject = {
+  def bsonDocumentToJValue(doc: BSONDocument): JObject = {
     JObject.apply(
-      list.map(t => t.map(x =>
-        JField(x._1, serialize(x._2))
+      doc.stream.map(t => t.map(x =>
+        JField(x._1, bsonValueToJValue(x._2))
       ).getOrElse(throw new MappingException("Failed to serialize value " + t.get._1))).toList
     )
   }
