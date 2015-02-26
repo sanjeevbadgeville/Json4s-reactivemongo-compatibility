@@ -3,7 +3,7 @@ An attempt to make json4s and reactivemongo fully interoperable.
 
 ##### How is this helpful?
 Suppose we are the NSA keeping a close watch on people, and we have the following data model in json:
-```
+``` JSON
 {
   "id": "1072d5aa-a1e3-4d47-9434-6932e5d53a9f",
   "name": "Billy Bob",
