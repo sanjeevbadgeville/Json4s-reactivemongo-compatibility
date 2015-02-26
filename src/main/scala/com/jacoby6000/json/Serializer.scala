@@ -1,18 +1,9 @@
 package com.jacoby6000.json
 
-import _root_.reactivemongo.bson.BSONArray
-import _root_.reactivemongo.bson.BSONBoolean
-import _root_.reactivemongo.bson.BSONDocument
-import _root_.reactivemongo.bson.BSONDouble
-import _root_.reactivemongo.bson.BSONInteger
-import _root_.reactivemongo.bson.BSONLong
-import _root_.reactivemongo.bson.BSONNull
-import _root_.reactivemongo.bson.BSONObjectID
-import _root_.reactivemongo.bson.BSONString
-import _root_.reactivemongo.bson.BSONValue
+import _root_.reactivemongo.api.{DefaultDB, MongoConnection}
+import _root_.reactivemongo.bson._
 import org.json4s._
 import org.json4s.JsonAST.JValue
-
 import scala.util.Try
 
 /**

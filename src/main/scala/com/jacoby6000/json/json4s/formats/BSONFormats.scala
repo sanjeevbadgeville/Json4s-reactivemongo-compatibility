@@ -1,4 +1,4 @@
-package com.jacoby6000.json.json4s
+package com.jacoby6000.json.json4s.formats
 
 import com.jacoby6000.json.Serializer
 import org.json4s.CustomSerializer

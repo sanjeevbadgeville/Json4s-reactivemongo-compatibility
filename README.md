@@ -157,8 +157,8 @@ import com.jacoby6000.json.reactivemongo.translation.{JValueReader, JValueWriter
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
   val collection = db.collection[BSONCollection]("persons")
   implicit val json4sFormats = DefaultFormats + new BSONFormats
-  implicit val jValueReader = new JValueReader
-  implicit val jValueWriter = new JValueWriter
+  implicit val jValueReader = JValueReader
+  implicit val jValueWriter = JValueWriter
 
   def get(id: String) = {
     collection.find(BSONDocument("_id" -> id)).one[JValue].map(_.map(_.camelizeKeys.extract[Person])) // You should probably extract the person differently. This will silently fail if there's an error during deserialization.
@@ -183,8 +183,8 @@ case class KVPair(name: String, value: Int)
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
   val collection = db.collection[BSONCollection]("persons")
   implicit val json4sFormats = DefaultFormats + new BSONFormats
-  implicit val jValueReader = new JValueReader
-  implicit val jValueWriter = new JValueWriter
+  implicit val jValueReader = JValueReader
+  implicit val jValueWriter = JValueWriter
 
   def get(id: String) = {
     collection.find(BSONDocument("_id" -> id)).one[JValue].map(_.map(_.camelizeKeys.extract[Person]))
@@ -197,13 +197,18 @@ class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
 ```
 
 ##### Some things to clear up
-This does not perform as well as document readers and writers, especially as currently implemented. Eventually it will be faster than it is now, but readers and writers will probably always be faster.
+This does not perform as well as document readers and writers, especially as currently implemented. Eventually it will
+be faster than it is now, but readers and writers will probably always be faster.
 
-The ideal time to use this is when developing in a rapidly changing domain, or during development. After development has mostly finished and the data-model has solidified, I would reccomend creating readers and writers, unless you don't need super fast performance.
+The ideal time to use this is when developing in a rapidly changing domain, or during development. After development has
+mostly finished and the data-model has solidified, I would reccomend creating readers and writers, unless you don't need
+super fast performance.
 
-This will not automatically serialize normal classes. See the json4s documentation for more details. Json4s requires custom serializers, similar to document readers and writers, in order to serialize classes.
+This will not automatically serialize normal classes. See the json4s documentation for more details. Json4s requires
+custom serializers, similar to document readers and writers, in order to serialize classes.
 
-Currently BSONObjectIds are serialized straight in to strings, which means they'll be stored in mongo as strings. I'm working on a way around this currently.  I don't know enough about how json4s works yet to do it.
+Currently BSONObjectIds are serialized straight in to strings, which means they'll be stored in mongo as strings.
+I'm working on a way around this.  I don't know enough about how json4s works yet to do it.
 
 ##### TODO
 1. Improve BSONObjectId support with JValues.

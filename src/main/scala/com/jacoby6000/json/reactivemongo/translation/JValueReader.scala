@@ -7,6 +7,6 @@ import reactivemongo.bson.{BSONDocument, BSONDocumentReader}
 /**
  * Created by jbarber on 2/26/15.
  */
-class JValueReader extends BSONDocumentReader[JValue] {
+object JValueReader extends BSONDocumentReader[JValue] {
   override def read(bson: BSONDocument): JValue = Serializer.bsonValueToJValue(bson)
 }

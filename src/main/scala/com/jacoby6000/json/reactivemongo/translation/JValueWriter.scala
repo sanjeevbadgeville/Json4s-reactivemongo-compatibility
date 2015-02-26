@@ -7,7 +7,7 @@ import reactivemongo.bson.{BSONDocument, BSONDocumentWriter}
 /**
  * Created by jbarber on 2/26/15.
  */
-class JValueWriter extends BSONDocumentWriter[JValue] {
+object JValueWriter extends BSONDocumentWriter[JValue] {
   def write(t: JValue): BSONDocument = Serializer.jValueToBSONValue(t).asInstanceOf[BSONDocument]
 }
 
