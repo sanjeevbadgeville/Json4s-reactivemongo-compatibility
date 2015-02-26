@@ -31,6 +31,6 @@ BSONObjectId -> JString (Will probably make a JObjectId at some point... not sur
 
 
 
-TODO:
+##### TODO
 1. Improve BSONObjectId support with JValues.
 2. Figure out some way to leverage json4s to not have to create BSONDocumentReaders/Writers.
