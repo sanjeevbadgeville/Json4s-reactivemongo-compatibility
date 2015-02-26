@@ -1,33 +1,6 @@
 # Json4s-reactivemongo-compatibility
 An attempt to make json4s and reactivemongo fully interoperable.
 
-##### Currently supported:
-JValue to BSONValue
-```
-JObject  -> BSONDocument
-JArray   -> BSONArray
-JBool    -> BSONBoolean
-JString  -> BSONString
-JDecimal -> BSONDouble (BSON has no type for decimal, i think. submit a pr or create an issue if I'm wrong.)
-JDouble  -> BSONDouble
-JInt     -> BSONLong (this is because json4s uses long to store JInt)
-JNothing -> BSONNull (There is no BSONNothing. If there is a better way to go about this, make a pr/issue)
-JNull    -> BSONNull
-```
-
-BSONValue to JValue
-```
-BSONDocument -> JObject
-BSONArray    -> JArray
-BSONBoolean  -> JBool
-BSONString   -> JString
-BSONDouble   -> JDouble
-BSONLong     -> JInt (JInt is a wrapped long, so yeah.)
-BSONInteger  -> JInt
-BSONNull     -> JNull
-BSONObjectId -> JString (Will probably make a JObjectId at some point... not sure yet).
-```
-
 ##### How is this helpful?
 Suppose we are the NSA keeping a close watch on people, and we have the following data model in json:
 ```
@@ -200,18 +173,43 @@ class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
 ```
 
 ##### Some things to clear up
-Is this as performant as document readers/writers?
-**No** Especially as currently implemented. Eventually it will be faster than it is now, but readers and writers will probably always be faster
+This does not perform as well as document readers and writers, especially as currently implemented. Eventually it will be faster than it is now, but readers and writers will probably always be faster.
 
-When should I use this?
-When developing in a rapidly changing domain, or during development. After development has mostly finished and data-model changing has settled down, I would reccomend creating readers and writers, unless you don't need super fast performance.
+The ideal time to use this is when developing in a rapidly changing domain, or during development. After development has mostly finished and the data-model has solidified, I would reccomend creating readers and writers, unless you don't need super fast performance.
 
-Can this serialize classes as well?
-**Sort Of** See the json4s documentation for more details. Json4s requires custom serializers, similar to document readers and writers, in order to serialize classes.
+This will not automatically serialize normal classes. See the json4s documentation for more details. Json4s requires custom serializers, similar to document readers and writers, in order to serialize classes.
 
+Currently BSONObjectIds are serialized straight in to strings, which means they'll be stored in mongo as strings. I'm working on a way around this currently.  I don't know enough about how json4s works yet to do it.
 
 ##### TODO
 1. Improve BSONObjectId support with JValues.
 2. Figure out some way to leverage json4s to not have to create BSONDocumentReaders/Writers.
 3. Get reactive mongo to pull queries in to JValues instead of going BSONCollection -> JValue -> Object.
 4. Tests
+
+##### Currently supported:
+JValue to BSONValue
+```
+JObject  -> BSONDocument
+JArray   -> BSONArray
+JBool    -> BSONBoolean
+JString  -> BSONString
+JDecimal -> BSONDouble (BSON has no type for decimal, i think. submit a pr or create an issue if I'm wrong.)
+JDouble  -> BSONDouble
+JInt     -> BSONLong (this is because json4s uses long to store JInt)
+JNothing -> BSONNull (There is no BSONNothing. If there is a better way to go about this, make a pr/issue)
+JNull    -> BSONNull
+```
+
+BSONValue to JValue
+```
+BSONDocument -> JObject
+BSONArray    -> JArray
+BSONBoolean  -> JBool
+BSONString   -> JString
+BSONDouble   -> JDouble
+BSONLong     -> JInt (JInt is a wrapped long, so yeah.)
+BSONInteger  -> JInt
+BSONNull     -> JNull
+BSONObjectId -> JString (Will probably make a JObjectId at some point... not sure yet).
+```
