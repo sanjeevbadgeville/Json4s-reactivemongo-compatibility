@@ -152,46 +152,47 @@ Quite a bit of code there... Not too bad if your data model will never change, a
 Lets compare that to a json4s implementation. We'll use the same json payload and case classes as above.
 
 ``` scala
-import com.jacoby6000.json.json4s.BSONFormats
-import com.jacoby6000.json.reactivemongo.translation.{JValueReader, JValueWriter}
+import org.json4s.Extraction
+import reactivemongo.api.{JSONCollection, DefaultDB}
+import org.json4s.JsonAST._
+import scala.concurrent.ExecutionContext
+
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
-  val collection = db.collection[BSONCollection]("persons")
-  implicit val json4sFormats = DefaultFormats + new BSONFormats
-  implicit val jValueReader = JValueReader
-  implicit val jValueWriter = JValueWriter
+  val collection = db.collection[JSONCollection]("persons")
+  import com.jacoby6000.json.json4s.BSONFormats._
 
   def get(id: String) = {
-    collection.find(BSONDocument("_id" -> id)).one[JValue].map(_.map(_.camelizeKeys.extract[Person])) // You should probably extract the person differently. This will silently fail if there's an error during deserialization.
+    collection.find(JObject("_id" -> JString(id))).extractOne[Person]
   }
-  
+
   def insert(person: Person) = {
-    collection.insert(Extraction.decompose(person))
+    collection.save(Extraction.decompose(person))
   }
 }
 ```
 
 That's it! Drop the readers and the writers and this is all you need:
 ``` scala
-import com.jacoby6000.json.json4s.BSONFormats
-import com.jacoby6000.json.reactivemongo.translation.{JValueReader, JValueWriter}
-
 case class Person(id: String, name: String, stuff: List[Container], job: Option[Occupation])
 case class Container(name: String, things: List[KVPair])
 case class Occupation(occupation: String = "ISIS", position: String)
 case class KVPair(name: String, value: Int)
 
+import org.json4s.Extraction
+import reactivemongo.api.{JSONCollection, DefaultDB}
+import org.json4s.JsonAST._
+import scala.concurrent.ExecutionContext
+
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
-  val collection = db.collection[BSONCollection]("persons")
-  implicit val json4sFormats = DefaultFormats + new BSONFormats
-  implicit val jValueReader = JValueReader
-  implicit val jValueWriter = JValueWriter
+  val collection = db.collection[JSONCollection]("persons")
+  import com.jacoby6000.json.json4s.BSONFormats._
 
   def get(id: String) = {
-    collection.find(BSONDocument("_id" -> id)).one[JValue].map(_.map(_.camelizeKeys.extract[Person]))
+    collection.find(JObject("_id" -> JString(id))).extractOne[Person]
   }
 
   def insert(person: Person) = {
-    collection.insert(Extraction.decompose(person))
+    collection.save(Extraction.decompose(person))
   }
 }
 ```
