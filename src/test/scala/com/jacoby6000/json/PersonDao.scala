@@ -5,8 +5,8 @@ package com.jacoby6000.json
  *
  */
 
+import org.json4s.Extraction
 import reactivemongo.api.{JSONCollection, DefaultDB}
-import org.json4s.{Extraction, DefaultFormats}
 import org.json4s.JsonAST._
 import scala.concurrent.ExecutionContext
 

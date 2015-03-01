@@ -2,6 +2,9 @@
  * Copyright 2012-2013 Stephane Godbillon (@sgodbillon)
  * Copyright 2015 Jacob Barber (@Jacoby6000)
  *
+ * Changes made by Jacob Barber to adapt the Play-json implementations of the reactivemongo Play Framework plugin to be
+ * used with json4s.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package reactivemongo
 
 import com.jacoby6000.json.json4s.BSONFormats
