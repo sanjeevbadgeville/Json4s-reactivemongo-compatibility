@@ -47,9 +47,6 @@ case class JSONReflectionCollection(
     StructureBufferWriter.write(Extraction.decompose(doc).extract[JObject], buffer).buffer
   }
 
-  private def writeDoc[T](doc: T, writer: Writer[T]) = BufferWriterInstance(writer).write(doc, ChannelBufferWritableBuffer()).buffer
-
-
   /**
    * Inserts the document, or updates it if it already exists in the collection.
    *

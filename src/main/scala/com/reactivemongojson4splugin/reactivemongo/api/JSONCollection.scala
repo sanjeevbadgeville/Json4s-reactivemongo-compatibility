@@ -43,10 +43,6 @@ trait JSONCollectionLike extends GenericCollection[JObject, Reader, Writer] with
 
   def genericQueryBuilder: JSONQueryBuilder = JSONQueryBuilder(this, failoverStrategy)
 
-  private def writeDoc[T](doc: T, writer: Writer[T]) = BufferWriterInstance(writer).write(doc, ChannelBufferWritableBuffer()).buffer
-
-
-
   /**
    * Inserts the document, or updates it if it already exists in the collection.
    *
