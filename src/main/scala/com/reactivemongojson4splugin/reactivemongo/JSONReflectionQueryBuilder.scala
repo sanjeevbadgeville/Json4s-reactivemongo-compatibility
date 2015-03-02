@@ -78,7 +78,7 @@ case class JSONReflectionQueryBuilder(
     *
     * @param readPreference The ReadPreference for this request. If the ReadPreference implies that this request might be run on a Secondary, the slaveOk flag will be set.
     */
-   def cursor[T](readPreference: ReadPreference)(implicit formats: Formats, ev1: Manifest[T]): Cursor[T] = {
+   def cursor[T](readPreference: ReadPreference)(implicit formats: Formats, ev1: Manifest[T]): ReflectiveCursor[T] = {
      val documents = BufferSequence {
        val buffer = writeStructureIntoBuffer(merge, ChannelBufferWritableBuffer())
        projectionOption.map { projection =>
@@ -92,4 +92,11 @@ case class JSONReflectionQueryBuilder(
 
      new ReflectiveCursor[T](op, documents, readPreference, collection.db.connection, failover)(ev1, StructureBufferReader, formats)
    }
+
+  /**
+   * Sends this query and gets a [[Cursor]] of instances of `T`.
+   *
+   * An implicit `Reader[T]` must be present in the scope.
+   */
+  def cursor[T](implicit formats: Formats, ec: ExecutionContext, ev1: Manifest[T]): ReflectiveCursor[T] = cursor(ReadPreference.primary)(formats, ev1)
  }
