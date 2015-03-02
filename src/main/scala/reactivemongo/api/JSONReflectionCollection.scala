@@ -24,18 +24,17 @@ import com.jacoby6000.json.json4s.BSONFormats.{JValueWriter, BSONObjectIDFormat}
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s._
 import play.api.libs.iteratee.{Enumeratee, Iteratee, Enumerator}
-import reactivemongo.api.collections.{GenericHandlers, GenericCollection, GenericQueryBuilder}
+import reactivemongo.api.collections.{GenericHandlers, GenericCollection}
 import reactivemongo.core.commands.{GetLastError, LastError}
 import reactivemongo.core.netty.{ChannelBufferWritableBuffer, BufferSequence}
 import reactivemongo.core.protocol._
 import reactivemongo.{JSONGenericHandlers, JSONQueryBuilder}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 /**
  * A Collection that interacts with the Play JSON library, using `Reader` and `Writer`.
  */
-case class JSONCollection(
+case class JSONReflectionCollection(
                            db: DB,
                            name: String,
                            failoverStrategy: FailoverStrategy) extends GenericCollection[JObject, Reader, Writer] with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
@@ -67,12 +66,12 @@ case class JSONCollection(
    * @param doc The document to save.
    * @param writeConcern the [reactivemongo.core.commands.GetLastError] command message to send in order to control how the document is inserted. Defaults to GetLastError().
    */
-  def save(doc: JObject, writeConcern: GetLastError)(implicit ec: ExecutionContext): Future[LastError] = {
+  def save(doc: JValue, writeConcern: GetLastError)(implicit ec: ExecutionContext): Future[LastError] = {
     import reactivemongo.bson._
 
     doc \ "_id" match {
       case JNothing | JNull => super.insert(doc ++ JObject("_id" -> BSONObjectIDFormat.write(BSONObjectID.generate)), writeConcern)(JValueWriter, ec)
-      case id => super.update(JObject("_id" -> id).asInstanceOf[JValue], doc, writeConcern, upsert = true)(JValueWriter, JValueWriter, ec)
+      case id => super.update(JObject("_id" -> id), doc, writeConcern, upsert = true)(JValueWriter, JValueWriter, ec)
     }
   }
 
@@ -82,8 +81,12 @@ case class JSONCollection(
    * @param doc The document to save.
    * @param writeConcern the [reactivemongo.core.commands.GetLastError] command message to send in order to control how the document is inserted. Defaults to GetLastError().
    */
-  def save[T](doc: T, writeConcern: GetLastError = GetLastError())(implicit ec: ExecutionContext, writer: Writer[T]): Future[LastError] =
-    save(writer.write(doc), writeConcern)
+  def save[T: Manifest](doc: T, writeConcern: GetLastError)(implicit ec: ExecutionContext, formats: Formats): Future[LastError] =
+    save(decompose(doc), writeConcern)
+
+  def save[T: Manifest](doc: T)(implicit ec: ExecutionContext, formats: Formats): Future[LastError] =
+    save(doc, GetLastError())
+
 
   /**
    * Find the documents matching the given criteria.
@@ -134,6 +137,9 @@ case class JSONCollection(
   def insert[T](document: T, writeConcern: GetLastError)(implicit formats: Formats,  ec: ExecutionContext): Future[LastError] =
     insert(decompose(document).extract[JObject],writeConcern)(formats, ec)
 
+  def insert[T](document: T)(implicit formats: Formats,  ec: ExecutionContext): Future[LastError] =
+    insert(decompose(document).extract[JObject],GetLastError())(formats, ec)
+
 
   /**
    * Inserts a document into the collection and wait for the [reactivemongo.core.commands.LastError] result.
@@ -147,13 +153,6 @@ case class JSONCollection(
    */
   def insert(document: JObject, writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = super.insert(document, writeConcern)(ec)
 
-  /**
-   * Inserts a document into the collection and wait for the [reactivemongo.core.commands.LastError] result.
-   *
-   * @param document the document to insert.
-   *
-   * @return a future [reactivemongo.core.commands.LastError] that can be used to check whether the insertion was successful.
-   */
   def insert(document: JObject)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = insert(document, GetLastError())(formats, ec)
 
   /**
@@ -179,6 +178,15 @@ case class JSONCollection(
     Failover(checkedWriteRequest, db.connection, failoverStrategy).future.mapEither(LastError.meaningful)
   }
 
+  def update[S, U](selector: S, update: U, writeConcern: GetLastError, upsert: Boolean)(implicit selectorFormats: Formats, updateWriter: Writer[U], ec: ExecutionContext): Future[LastError] =
+    this.update(selector, update, writeConcern, upsert, multi = false)(selectorFormats, updateWriter, ec)
+
+  def update[S, U](selector: S, update: U, writeConcern: GetLastError)(implicit selectorFormats: Formats, updateWriter: Writer[U], ec: ExecutionContext): Future[LastError] =
+    this.update(selector, update, writeConcern, upsert = false, multi = false)(selectorFormats, updateWriter, ec)
+
+  def update[S, U](selector: S, update: U)(implicit selectorFormats: Formats, updateWriter: Writer[U], ec: ExecutionContext): Future[LastError] =
+    this.update(selector, update, GetLastError(), upsert = false, multi = false)(selectorFormats, updateWriter, ec)
+
   /**
    * Remove the matched document(s) from the collection and wait for the [reactivemongo.core.commands.LastError] result.
    *
@@ -199,11 +207,38 @@ case class JSONCollection(
     Failover(checkedWriteRequest, db.connection, failoverStrategy).future.mapEither(LastError.meaningful)
   }
 
+  def remove[T](query: T, writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
+    remove(query, writeConcern, firstMatchOnly = false)(formats, ec)
+
+  def remove[T](query: T)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
+    remove(query, GetLastError(), firstMatchOnly = false)(formats, ec)
+
+
   def bulkInsert[T](enumerator: Enumerator[T], writeConcern: GetLastError, bulkSize: Int, bulkByteSize: Int)(implicit formats: Formats, ec: ExecutionContext): Future[Int] =
-    enumerator |>>> bulkInsertIteratee(writeConcern, bulkSize, bulkByteSize)
+    enumerator |>>> bulkInsertIteratee(writeConcern, bulkSize, bulkByteSize)(formats, ec)
+
+  def bulkInsert[T](enumerator: Enumerator[T], writeConcern: GetLastError, bulkSize: Int)(implicit formats: Formats, ec: ExecutionContext): Future[Int] =
+    bulkInsert(enumerator, writeConcern, bulkSize, bulk.MaxBulkSize)(formats, ec)
+
+  def bulkInsert[T](enumerator: Enumerator[T], writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[Int] =
+    bulkInsert(enumerator, writeConcern, bulk.MaxDocs, bulk.MaxBulkSize)(formats, ec)
+
+  def bulkInsert[T](enumerator: Enumerator[T])(implicit formats: Formats, ec: ExecutionContext): Future[Int] =
+    bulkInsert(enumerator, GetLastError(), bulk.MaxDocs, bulk.MaxBulkSize)(formats, ec)
+
 
   def bulkInsertIteratee[T](writeConcern: GetLastError, bulkSize: Int, bulkByteSize: Int)(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
-    Enumeratee.map { doc: T => writeDoc(doc)(formats) } &>> bulk.iteratee(this, writeConcern, bulkSize, bulkByteSize)
+    Enumeratee.map { doc: T => writeDoc(doc)(formats) } &>> bulk.iteratee(this, writeConcern, bulkSize, bulkByteSize)(ec)
+
+  def bulkInsertIteratee[T](writeConcern: GetLastError, bulkSize: Int)(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
+    bulkInsertIteratee(writeConcern, bulkSize, bulk.MaxBulkSize)(formats, ec)
+
+  def bulkInsertIteratee[T](writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
+    bulkInsertIteratee(writeConcern, bulk.MaxDocs, bulk.MaxBulkSize)(formats, ec)
+
+  def bulkInsertIteratee[T]()(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
+    bulkInsertIteratee(GetLastError(), bulk.MaxDocs, bulk.MaxBulkSize)(formats, ec)
+
 
   /**
    * Remove the matched document(s) from the collection without writeConcern.
@@ -222,7 +257,10 @@ case class JSONCollection(
     db.connection.send(message)
   }
 
-  /**
+  def uncheckedRemove[T](query: T)(implicit formats: Formats, ec: ExecutionContext): Unit =
+    uncheckedRemove(query, firstMatchOnly = false)
+
+    /**
    * Updates one or more documents matching the given selector with the given modifier or update object.
    *
    * Please note that you cannot be sure that the matched documents have been effectively updated and when (hence the Unit return type).
@@ -238,6 +276,13 @@ case class JSONCollection(
   def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean, multi: Boolean)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit = {
     uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update,updateWriter), upsert, multi)
   }
+
+  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit =
+    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update,updateWriter), upsert, multi = false)
+
+  def uncheckedUpdate[S, U](selector: S, update: U)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit =
+    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update,updateWriter), upsert = false, multi = false)
+
 
   /**
    * Updates one or more documents matching the given selector with the given modifier or update object.
@@ -256,6 +301,15 @@ case class JSONCollection(
     uncheckedUpdate(writeDoc(selector, selectorWriter), writeDoc(update)(updateFormats), upsert, multi)
   }
 
+  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean)(implicit selectorWriter: Writer[S], updateFormats: Formats): Unit =
+    uncheckedUpdate(writeDoc(selector, selectorWriter), writeDoc(update)(updateFormats), upsert, multi = false)
+
+
+  def uncheckedUpdate[S, U](selector: S, update: U)(implicit selectorWriter: Writer[S], updateFormats: Formats): Unit =
+    uncheckedUpdate(writeDoc(selector, selectorWriter), writeDoc(update)(updateFormats), upsert = false, multi = false)
+
+
+
   /**
    * Updates one or more documents matching the given selector with the given modifier or update object.
    *
@@ -273,7 +327,15 @@ case class JSONCollection(
     uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update)(updateFormats), upsert, multi)
   }
 
-  /**
+  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean)(implicit selectorFormats: Formats, updateFormats: Formats): Unit =
+    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update)(updateFormats), upsert, multi = false)
+
+
+  def uncheckedUpdate[S, U](selector: S, update: U)(implicit selectorFormats: Formats, updateFormats: Formats): Unit =
+    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update)(updateFormats), upsert = false, multi = false)
+
+
+    /**
    * Updates one or more documents matching the given selector with the given modifier or update object.
    *
    * Please note that you cannot be sure that the matched documents have been effectively updated and when (hence the Unit return type).

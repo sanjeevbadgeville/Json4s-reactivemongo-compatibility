@@ -5,30 +5,23 @@ package com.jacoby6000.json
  *
  */
 
-import org.json4s.{DefaultFormats, Formats, Extraction}
+import org.json4s.Extraction
 import reactivemongo.JSONGenericHandlers
-import reactivemongo.api.{JSONCollection, DefaultDB}
+import reactivemongo.api.{JSONReflectionCollection, DefaultDB}
 import org.json4s.JsonAST._
+import reactivemongo.core.commands.GetLastError
 import scala.concurrent.ExecutionContext
 
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) extends JSONGenericHandlers {
-  val collection = db.collection[JSONCollection]("persons")
+  val collection = db.collection[JSONReflectionCollection]("persons")
   import com.jacoby6000.json.json4s.BSONFormats._
-
-  class AutoReader[T: Manifest](implicit formats: Formats) extends org.json4s.Reader[T] {
-    def read(value: JValue): T = value.extract[T]
-  }
-
-  class AutoWriter[T: Manifest](implicit formats: Formats) extends org.json4s.Writer[T] {
-    def write(value: T): JValue = Extraction.decompose(value)
-  }
 
   def get(id: String) = {
     collection.find(JObject("_id" -> JString(id))).one[Person]
   }
 
   def insert(person: Person) = {
-    collection.save(Extraction.decompose(person))
+    collection.save(person, GetLastError())
   }
 }
 
