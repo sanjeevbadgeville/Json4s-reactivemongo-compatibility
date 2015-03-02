@@ -29,67 +29,70 @@ import reactivemongo.core.protocol.{Query, QueryFlags}
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Created by jbarber on 2/28/15.
-  */
+ * Created by jbarber on 2/28/15.
+ */
 case class JSONReflectionQueryBuilder(
-                              collection: Collection,
-                              failover: FailoverStrategy,
-                              queryOption: Option[JObject] = None,
-                              sortOption: Option[JObject] = None,
-                              projectionOption: Option[JObject] = None,
-                              hintOption: Option[JObject] = None,
-                              explainFlag: Boolean = false,
-                              snapshotFlag: Boolean = false,
-                              commentString: Option[String] = None,
-                              options: QueryOpts = QueryOpts()) extends JSONQueryBuilderLike {
+                                       collection: Collection,
+                                       failover: FailoverStrategy,
+                                       queryOption: Option[JObject] = None,
+                                       sortOption: Option[JObject] = None,
+                                       projectionOption: Option[JObject] = None,
+                                       hintOption: Option[JObject] = None,
+                                       explainFlag: Boolean = false,
+                                       snapshotFlag: Boolean = false,
+                                       commentString: Option[String] = None,
+                                       options: QueryOpts = QueryOpts()) extends JSONQueryBuilderLike {
 
-   implicit val formats = DefaultFormats
-   implicit val bsonHandlers = ImplicitBSONHandlers
+  import org.json4s.Extraction._
+
+  implicit val formats = DefaultFormats
+  implicit val bsonHandlers = ImplicitBSONHandlers
+
 
   type Self = JSONReflectionQueryBuilder
 
 
   def copy(queryOption: Option[JObject], sortOption: Option[JObject], projectionOption: Option[JObject], hintOption: Option[JObject], explainFlag: Boolean, snapshotFlag: Boolean, commentString: Option[String], options: QueryOpts, failover: FailoverStrategy): JSONReflectionQueryBuilder =
-     JSONReflectionQueryBuilder(collection, failover, queryOption, sortOption, projectionOption, hintOption, explainFlag, snapshotFlag, commentString, options)
+    JSONReflectionQueryBuilder(collection, failover, queryOption, sortOption, projectionOption, hintOption, explainFlag, snapshotFlag, commentString, options)
 
-   /**
-    * Sends this query and gets a future `Option[JValue]`.
-    *
-    * An implicit `ExecutionContext` must be present in the scope.
-    */
-   def one(implicit ec: ExecutionContext): Future[Option[JValue]] = copy(options = options.batchSize(1)).cursor(structureReader, ec).headOption
+  /**
+   * Sends this query and gets a future `Option[JValue]`.
+   *
+   * An implicit `ExecutionContext` must be present in the scope.
+   */
+  def one(implicit ec: ExecutionContext): Future[Option[JValue]] = copy(options = options.batchSize(1)).cursor(structureReader, ec).headOption
 
-   /**
-    * Sends this query and retrieves a JValue from the db representing the record, then extracts it into type T wrapped in an option.
-    *
-    * An implicit Formats capable of extracting T must be in scope.
-    */
-   def one[T: Manifest](implicit formats: Formats, ec: ExecutionContext): Future[Option[T]] = one(ec).collect {
-     case Some(jv) => Some(jv.extract[T])
-     case None => None
-   }
+  /**
+   * Sends this query and retrieves a JValue from the db representing the record, then extracts it into type T wrapped in an option.
+   *
+   * An implicit Formats capable of extracting T must be in scope.
+   */
+  def one[T: Manifest](implicit formats: Formats, ec: ExecutionContext): Future[Option[T]] = one(ec).collect {
+    case Some(jv) => Some(jv.extract[T])
+    case None => None
+  }
 
-   /**
-    * Makes a [[Cursor]] of this query, which can be enumerated.
-    *
-    * An implicit `Reader[JObject]` and Formats must be present in the scope.
-    *
-    * @param readPreference The ReadPreference for this request. If the ReadPreference implies that this request might be run on a Secondary, the slaveOk flag will be set.
-    */
-   def cursor[T](readPreference: ReadPreference)(implicit formats: Formats, ev1: Manifest[T]): ReflectiveCursor[T] = {
-     val documents = BufferSequence {
-       val buffer = writeStructureIntoBuffer(merge, ChannelBufferWritableBuffer())
-       projectionOption.map { projection =>
-         writeStructureIntoBuffer(projection, buffer)
-       }.getOrElse(buffer).buffer
-     }
+  /**
+   * Makes a [[Cursor]] of this query, which can be enumerated.
+   *
+   * An implicit `Formats` must be present in the scope.
+   *
+   * @param readPreference The ReadPreference for this request. If the ReadPreference implies that this request might be run on a Secondary, the slaveOk flag will be set.
+   */
+  def cursor[T](readPreference: ReadPreference)(implicit formats: Formats, ev1: Manifest[T]): ReflectiveCursor[T] = {
+    val documents = BufferSequence {
+      val buffer = writeStructureIntoBuffer(merge, ChannelBufferWritableBuffer())
+      projectionOption.map { projection =>
+        writeStructureIntoBuffer(projection, buffer)
+      }.getOrElse(buffer).buffer
+    }
 
-     val flags = if (readPreference.slaveOk) options.flagsN | QueryFlags.SlaveOk else options.flagsN
+    val flags = if (readPreference.slaveOk) options.flagsN | QueryFlags.SlaveOk else options.flagsN
 
-     val op = Query(flags, collection.fullCollectionName, options.skipN, options.batchSizeN)
+    val op = Query(flags, collection.fullCollectionName, options.skipN, options.batchSizeN)
 
-     new ReflectiveCursor[T](op, documents, readPreference, collection.db.connection, failover)(ev1, StructureBufferReader, formats)
-   }
+    new ReflectiveCursor[T](op, documents, readPreference, collection.db.connection, failover)(ev1, StructureBufferReader, formats)
+  }
 
   /**
    * Sends this query and gets a [[Cursor]] of instances of `T`.
@@ -97,4 +100,12 @@ case class JSONReflectionQueryBuilder(
    * An implicit `Reader[T]` must be present in the scope.
    */
   def cursor[T](implicit formats: Formats, ec: ExecutionContext, ev1: Manifest[T]): ReflectiveCursor[T] = cursor(ReadPreference.primary)(formats, ev1)
- }
+
+  /**
+   * Sets the projection document (for [[http://www.mongodb.org/display/DOCS/Retrieving+a+Subset+of+Fields retrieving only a subset of fields]]).
+   *
+   * @tparam Pjn The type of the projection. An implicit `Writer][Pjn]` typeclass for handling it has to be in the scope.
+   */
+  def projection[Pjn: Manifest](p: Pjn)(implicit formats: Formats): Self = copy(projectionOption = Some(
+    decompose(p).extract[JObject]))
+}

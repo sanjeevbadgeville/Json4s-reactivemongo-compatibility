@@ -21,7 +21,7 @@
 package com.reactivemongojson4splugin.reactivemongo.api
 
 import org.jboss.netty.buffer.ChannelBuffer
-import org.json4s.Formats
+import org.json4s._
 import org.json4s.JsonAST.JObject
 import play.api.libs.iteratee._
 import reactivemongo.api._
@@ -41,7 +41,7 @@ class ReflectiveCursor[T](
                         documents: BufferSequence,
                         readPreference: ReadPreference,
                         mongoConnection: MongoConnection,
-                        failoverStrategy: FailoverStrategy)(implicit ev1: Manifest[T], reader: BufferReader[JObject], formats: Formats) extends Cursor[T] {
+                        failoverStrategy: FailoverStrategy)(implicit ev1: Manifest[T], reader: BufferReader[JValue], formats: Formats) extends Cursor[T] {
 
   private[api] val logger = LazyLogger("com.jacoby6000.reactivemongo.api.ReflectiveCursor")
 
@@ -179,7 +179,7 @@ class ReflectiveCursor[T](
   }
 }
 
-private[reactivemongo] case class ReflectiveReplyDocumentIterator[T: Manifest](private val reply: Reply, private val buffer: ChannelBuffer)(implicit reader: BufferReader[JObject], formats: Formats) extends Iterator[T] {
+private[reactivemongo] case class ReflectiveReplyDocumentIterator[T: Manifest](private val reply: Reply, private val buffer: ChannelBuffer)(implicit reader: BufferReader[JValue], formats: Formats) extends Iterator[T] {
   def hasNext = buffer.readable
   def next =
     try {
