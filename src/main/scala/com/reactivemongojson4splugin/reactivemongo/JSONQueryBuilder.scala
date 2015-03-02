@@ -20,15 +20,8 @@
 
 package com.reactivemongojson4splugin.reactivemongo
 
-import com.reactivemongojson4splugin.reactivemongo.api.ReflectiveCursor
 import org.json4s._
 import reactivemongo.api._
-import reactivemongo.api.collections.{BufferReader, GenericQueryBuilder}
-import reactivemongo.bson.buffer.WritableBuffer
-import reactivemongo.core.netty.{BufferSequence, ChannelBufferWritableBuffer}
-import reactivemongo.core.protocol.{Query, QueryFlags}
-
-import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Created by jbarber on 2/28/15.
