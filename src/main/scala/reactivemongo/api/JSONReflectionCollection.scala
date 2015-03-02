@@ -24,7 +24,7 @@ import com.jacoby6000.json.json4s.BSONFormats.{JValueWriter, BSONObjectIDFormat}
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s._
 import play.api.libs.iteratee.{Enumeratee, Iteratee, Enumerator}
-import reactivemongo.api.collections.{GenericHandlers, GenericCollection}
+import reactivemongo.api.collections.GenericHandlers
 import reactivemongo.core.commands.{GetLastError, LastError}
 import reactivemongo.core.netty.{ChannelBufferWritableBuffer, BufferSequence}
 import reactivemongo.core.protocol._
@@ -37,11 +37,9 @@ import scala.concurrent.{ExecutionContext, Future}
 case class JSONReflectionCollection(
                            db: DB,
                            name: String,
-                           failoverStrategy: FailoverStrategy) extends GenericCollection[JObject, Reader, Writer] with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
+                           failoverStrategy: FailoverStrategy) extends JSONCollectionLike with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
   import Extraction._
   import reactivemongo.utils.EitherMappableFuture._
-
-  def genericQueryBuilder: JSONQueryBuilder = JSONQueryBuilder(this, failoverStrategy)
 
   private def writeDoc[T](doc: T)(implicit formats: Formats): ChannelBuffer = {
     val buffer = ChannelBufferWritableBuffer()
@@ -51,42 +49,17 @@ case class JSONReflectionCollection(
   private def writeDoc[T](doc: T, writer: Writer[T]) = BufferWriterInstance(writer).write(doc, ChannelBufferWritableBuffer()).buffer
 
 
-
-  /**
-   * Inserts the document, or updates it if it already exists in the collection.
-   *
-   * @param doc The document to save.
-   */
-  def save(doc: JObject)(implicit ec: ExecutionContext): Future[LastError] =
-    save(doc, GetLastError())
-
   /**
    * Inserts the document, or updates it if it already exists in the collection.
    *
    * @param doc The document to save.
    * @param writeConcern the [reactivemongo.core.commands.GetLastError] command message to send in order to control how the document is inserted. Defaults to GetLastError().
    */
-  def save(doc: JValue, writeConcern: GetLastError)(implicit ec: ExecutionContext): Future[LastError] = {
-    import reactivemongo.bson._
+  def save[T](doc: T, writeConcern: GetLastError)(implicit ec: ExecutionContext, formats: Formats, ev1: Manifest[T]): Future[LastError] =
+    super.save(decompose(doc), writeConcern)(ec)
 
-    doc \ "_id" match {
-      case JNothing | JNull => super.insert(doc ++ JObject("_id" -> BSONObjectIDFormat.write(BSONObjectID.generate)), writeConcern)(JValueWriter, ec)
-      case id => super.update(JObject("_id" -> id), doc, writeConcern, upsert = true)(JValueWriter, JValueWriter, ec)
-    }
-  }
-
-  /**
-   * Inserts the document, or updates it if it already exists in the collection.
-   *
-   * @param doc The document to save.
-   * @param writeConcern the [reactivemongo.core.commands.GetLastError] command message to send in order to control how the document is inserted. Defaults to GetLastError().
-   */
-  def save[T: Manifest](doc: T, writeConcern: GetLastError)(implicit ec: ExecutionContext, formats: Formats): Future[LastError] =
-    save(decompose(doc), writeConcern)
-
-  def save[T: Manifest](doc: T)(implicit ec: ExecutionContext, formats: Formats): Future[LastError] =
-    save(doc, GetLastError())
-
+  def save[T](doc: T)(implicit ec: ExecutionContext, formats: Formats, ev1: Manifest[T]): Future[LastError] =
+    save(doc, GetLastError())(ec, formats, ev1)
 
   /**
    * Find the documents matching the given criteria.
@@ -119,8 +92,44 @@ case class JSONReflectionCollection(
    *
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
-  def find[S, P](selector: S, projection: P)(implicit formats: Formats): JSONQueryBuilder =
-    genericQueryBuilder.query(decompose(selector)).projection(decompose(projection))
+  def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionFormats: Formats): JSONQueryBuilder =
+    genericQueryBuilder.query(decompose(selector)(selectorFormats)).projection(decompose(projection)(projectionFormats))
+
+  /**
+   * Find the documents matching the given criteria.
+   *
+   * This method accepts any query and projection object, provided that there is an implicit `Writer[S]` typeclass for handling them in the scope.
+   *
+   * Please take a look to the [http://www.mongodb.org/display/DOCS/Querying mongodb documentation] to know how querying works.
+   *
+   * @tparam S the type of the selector (the query). An implicit `Writer[S]` typeclass for handling it has to be in the scope.
+   * @tparam P the type of the projection object. An implicit `Writer[P]` typeclass for handling it has to be in the scope.
+   *
+   * @param selector The selector query.
+   * @param projection Get only a subset of each matched documents. Defaults to None.
+   *
+   * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
+   */
+  def find[S, P](selector: S, projection: P)(implicit selectorWriter: Writer[S], projectionFormats: Formats): JSONQueryBuilder =
+    genericQueryBuilder.query(selectorWriter.write(selector)).projection(decompose(projection)(projectionFormats))
+
+  /**
+   * Find the documents matching the given criteria.
+   *
+   * This method accepts any query and projection object, provided that there is an implicit `Writer[S]` typeclass for handling them in the scope.
+   *
+   * Please take a look to the [http://www.mongodb.org/display/DOCS/Querying mongodb documentation] to know how querying works.
+   *
+   * @tparam S the type of the selector (the query). An implicit `Writer[S]` typeclass for handling it has to be in the scope.
+   * @tparam P the type of the projection object. An implicit `Writer[P]` typeclass for handling it has to be in the scope.
+   *
+   * @param selector The selector query.
+   * @param projection Get only a subset of each matched documents. Defaults to None.
+   *
+   * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
+   */
+  def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionWriter: Writer[P]): JSONQueryBuilder =
+    genericQueryBuilder.query(decompose(selector)(selectorFormats)).projection(projectionWriter.write(projection))
 
   /**
    * Inserts a document into the collection and wait for the [reactivemongo.core.commands.LastError] result.
