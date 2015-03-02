@@ -131,7 +131,7 @@ case class JSONCollection(
    *
    * @return a future [reactivemongo.core.commands.LastError] that can be used to check whether the insertion was successful.
    */
-  def insert[T](document: T, writeConcern: GetLastError = GetLastError())(implicit formats: Formats,  ec: ExecutionContext): Future[LastError] =
+  def insert[T](document: T, writeConcern: GetLastError)(implicit formats: Formats,  ec: ExecutionContext): Future[LastError] =
     insert(decompose(document).extract[JObject],writeConcern)(formats, ec)
 
 
@@ -170,7 +170,7 @@ case class JSONCollection(
    *
    * @return a future [reactivemongo.core.commands.LastError] that can be used to check whether the update was successful.
    */
-  def update[S, U](selector: S, update: U, writeConcern: GetLastError = GetLastError(), upsert: Boolean = false, multi: Boolean = false)(implicit selectorFormats: Formats, updateWriter: Writer[U], ec: ExecutionContext): Future[LastError] = watchFailure {
+  def update[S, U](selector: S, update: U, writeConcern: GetLastError, upsert: Boolean, multi: Boolean)(implicit selectorFormats: Formats, updateWriter: Writer[U], ec: ExecutionContext): Future[LastError] = watchFailure {
     val flags = 0 | (if (upsert) UpdateFlags.Upsert else 0) | (if (multi) UpdateFlags.MultiUpdate else 0)
     val op = Update(fullCollectionName, flags)
     val bson = writeDoc(selector)(selectorFormats)
@@ -192,17 +192,17 @@ case class JSONCollection(
    *
    * @return a Future[reactivemongo.core.commands.LastError] that can be used to check whether the removal was successful.
    */
-  def remove[T](query: T, writeConcern: GetLastError = GetLastError(), firstMatchOnly: Boolean = false)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = watchFailure {
+  def remove[T](query: T, writeConcern: GetLastError, firstMatchOnly: Boolean)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = watchFailure {
     val op = Delete(fullCollectionName, if (firstMatchOnly) 1 else 0)
     val bson = writeDoc(query)(formats)
     val checkedWriteRequest = CheckedWriteRequest(op, BufferSequence(bson), writeConcern)
     Failover(checkedWriteRequest, db.connection, failoverStrategy).future.mapEither(LastError.meaningful)
   }
 
-  def bulkInsert[T](enumerator: Enumerator[T], writeConcern: GetLastError = GetLastError(), bulkSize: Int = bulk.MaxDocs, bulkByteSize: Int = bulk.MaxBulkSize)(implicit formats: Formats, ec: ExecutionContext): Future[Int] =
+  def bulkInsert[T](enumerator: Enumerator[T], writeConcern: GetLastError, bulkSize: Int, bulkByteSize: Int)(implicit formats: Formats, ec: ExecutionContext): Future[Int] =
     enumerator |>>> bulkInsertIteratee(writeConcern, bulkSize, bulkByteSize)
 
-  def bulkInsertIteratee[T](writeConcern: GetLastError = GetLastError(), bulkSize: Int = bulk.MaxDocs, bulkByteSize: Int = bulk.MaxBulkSize)(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
+  def bulkInsertIteratee[T](writeConcern: GetLastError, bulkSize: Int, bulkByteSize: Int)(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
     Enumeratee.map { doc: T => writeDoc(doc)(formats) } &>> bulk.iteratee(this, writeConcern, bulkSize, bulkByteSize)
 
   /**
@@ -215,7 +215,7 @@ case class JSONCollection(
    * @param query the selector of documents to remove.
    * @param firstMatchOnly states whether only the first matched documents has to be removed from this collection.
    */
-  def uncheckedRemove[T](query: T, firstMatchOnly: Boolean = false)(implicit formats: Formats, ec: ExecutionContext): Unit = {
+  def uncheckedRemove[T](query: T, firstMatchOnly: Boolean)(implicit formats: Formats, ec: ExecutionContext): Unit = {
     val op = Delete(fullCollectionName, if (firstMatchOnly) 1 else 0)
     val bson = writeDoc(query)(formats)
     val message = RequestMaker(op, BufferSequence(bson))
@@ -235,7 +235,7 @@ case class JSONCollection(
    * @param upsert states whether the update object should be inserted if no match found. Defaults to false.
    * @param multi states whether the update may be done on all the matching documents.
    */
-  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean = false, multi: Boolean = false)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit = {
+  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean, multi: Boolean)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit = {
     uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update,updateWriter), upsert, multi)
   }
 
@@ -252,7 +252,7 @@ case class JSONCollection(
    * @param upsert states whether the update object should be inserted if no match found. Defaults to false.
    * @param multi states whether the update may be done on all the matching documents.
    */
-  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean = false, multi: Boolean = false)(implicit selectorWriter: Writer[S], updateFormats: Formats): Unit = {
+  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean, multi: Boolean)(implicit selectorWriter: Writer[S], updateFormats: Formats): Unit = {
     uncheckedUpdate(writeDoc(selector, selectorWriter), writeDoc(update)(updateFormats), upsert, multi)
   }
 
@@ -269,7 +269,7 @@ case class JSONCollection(
    * @param upsert states whether the update object should be inserted if no match found. Defaults to false.
    * @param multi states whether the update may be done on all the matching documents.
    */
-  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean = false, multi: Boolean = false)(implicit selectorFormats: Formats, updateFormats: Formats): Unit = {
+  def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean, multi: Boolean)(implicit selectorFormats: Formats, updateFormats: Formats): Unit = {
     uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update)(updateFormats), upsert, multi)
   }
 

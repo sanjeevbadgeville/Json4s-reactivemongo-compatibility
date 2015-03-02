@@ -92,8 +92,8 @@ case class JSONQueryBuilder(
    *
    * An implicit Formats capable of extracting T must be in scope.
    */
-  def extractOne[T: Manifest](implicit formats: Formats, ec: ExecutionContext) = one(ec).collect {
-    case Some(jv) => jv.extract[T]
+  def one[T: Manifest](implicit formats: Formats, ec: ExecutionContext): Future[Option[T]] = one(ec).collect {
+    case Some(jv) => Some(jv.extract[T])
     case None => None
   }
 
