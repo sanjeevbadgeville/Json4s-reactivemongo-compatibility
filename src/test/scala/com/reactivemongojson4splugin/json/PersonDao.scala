@@ -1,20 +1,21 @@
-package com.jacoby6000.json
+package com.reactivemongojson4splugin.json
 
 /**
  * Created by jbarber on 2/26/15.
  *
  */
 
+import com.reactivemongojson4splugin.reactivemongo.JSONGenericHandlers
+import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
 import org.json4s.Extraction
-import reactivemongo.JSONGenericHandlers
-import reactivemongo.api.{JSONReflectionCollection, DefaultDB}
+import reactivemongo.api.DefaultDB
 import org.json4s.JsonAST._
 import reactivemongo.core.commands.GetLastError
 import scala.concurrent.ExecutionContext
 
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) extends JSONGenericHandlers {
   val collection = db.collection[JSONReflectionCollection]("persons")
-  import com.jacoby6000.json.json4s.BSONFormats._
+  import com.reactivemongojson4splugin.json4s.BSONFormats._
 
   def get(id: String) = {
     collection.find(JObject("_id" -> JString(id))).one[Person]

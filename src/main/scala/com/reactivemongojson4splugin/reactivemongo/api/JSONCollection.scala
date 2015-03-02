@@ -18,17 +18,15 @@
  * limitations under the License.
  */
 
-package reactivemongo.api
+package com.reactivemongojson4splugin.reactivemongo.api
 
-import com.jacoby6000.json.json4s.BSONFormats.{BSONObjectIDFormat, JValueWriter}
-import org.jboss.netty.buffer.ChannelBuffer
+import com.reactivemongojson4splugin.json4s.BSONFormats.{BSONObjectIDFormat, JValueWriter}
+import com.reactivemongojson4splugin.reactivemongo.{JSONQueryBuilder, JSONGenericHandlers}
 import org.json4s._
-import play.api.libs.iteratee.{Enumeratee, Enumerator, Iteratee}
+import reactivemongo.api.{CollectionMetaCommands, FailoverStrategy, DB}
 import reactivemongo.api.collections.{GenericCollection, GenericHandlers}
 import reactivemongo.core.commands.{GetLastError, LastError}
-import reactivemongo.core.netty.{BufferSequence, ChannelBufferWritableBuffer}
-import reactivemongo.core.protocol._
-import reactivemongo.{JSONGenericHandlers, JSONQueryBuilder}
+import reactivemongo.core.netty.ChannelBufferWritableBuffer
 
 import scala.concurrent.{ExecutionContext, Future}
 

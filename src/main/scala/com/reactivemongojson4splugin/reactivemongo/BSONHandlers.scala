@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 
-package reactivemongo
+package com.reactivemongojson4splugin.reactivemongo
 
-import com.jacoby6000.json.json4s.BSONFormats
+import com.reactivemongojson4splugin.json4s.BSONFormats
 import org.json4s._
 import reactivemongo.bson.{BSONDocumentWriter, BSONDocumentReader, BSONDocument}
 

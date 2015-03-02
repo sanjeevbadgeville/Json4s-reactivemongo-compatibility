@@ -159,7 +159,7 @@ import scala.concurrent.ExecutionContext
 
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
   val collection = db.collection[JSONCollection]("persons")
-  import com.jacoby6000.json.json4s.BSONFormats._
+  import com.jacoby6000.json4s.BSONFormats._
 
   def get(id: String) = {
     collection.find(JObject("_id" -> JString(id))).extractOne[Person]
@@ -185,7 +185,7 @@ import scala.concurrent.ExecutionContext
 
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
   val collection = db.collection[JSONCollection]("persons")
-  import com.jacoby6000.json.json4s.BSONFormats._
+  import com.jacoby6000.json4s.BSONFormats._
 
   def get(id: String) = {
     collection.find(JObject("_id" -> JString(id))).extractOne[Person]

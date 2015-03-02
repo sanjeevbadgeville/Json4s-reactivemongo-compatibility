@@ -1,4 +1,4 @@
-package com.jacoby6000.json
+package com.reactivemongojson4splugin.json
 
 /**
  * Created by jbarber on 2/26/15.

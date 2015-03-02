@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package reactivemongo
+package com.reactivemongojson4splugin.reactivemongo
 
 import org.json4s._
 import reactivemongo.api.collections._
@@ -31,7 +31,7 @@ import reactivemongo.bson.buffer.ReadableBuffer
 object JSONGenericHandlers extends JSONGenericHandlers
 
 trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
-  import com.jacoby6000.json.json4s.BSONFormats._
+  import com.reactivemongojson4splugin.json4s.BSONFormats._
 
   object StructureBufferReader extends BufferReader[JObject] {
     def writeBuffer(buffer: ReadableBuffer) = BSONDocumentFormat.write(BSONDocument.read(buffer))

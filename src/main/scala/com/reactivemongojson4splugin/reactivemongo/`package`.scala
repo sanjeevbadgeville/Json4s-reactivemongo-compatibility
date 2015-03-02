@@ -18,11 +18,12 @@
  * limitations under the License.
  */
 
-package reactivemongo
+package com.reactivemongojson4splugin.reactivemongo
 
+import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
 import org.json4s._
 import reactivemongo.api.collections.GenericCollectionProducer
-import reactivemongo.api.{JSONReflectionCollection, DB, FailoverStrategy}
+import reactivemongo.api.{DB, FailoverStrategy}
 
 /**
  * A Collection that interacts with the Json4s library, using `Reader` and `Writer`.

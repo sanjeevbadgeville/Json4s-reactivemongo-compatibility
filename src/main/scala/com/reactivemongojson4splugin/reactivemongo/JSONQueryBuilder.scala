@@ -18,8 +18,9 @@
  * limitations under the License.
  */
 
-package reactivemongo
+package com.reactivemongojson4splugin.reactivemongo
 
+import com.reactivemongojson4splugin.reactivemongo.api.ReflectiveCursor
 import org.json4s._
 import reactivemongo.api._
 import reactivemongo.api.collections.{BufferReader, GenericQueryBuilder}

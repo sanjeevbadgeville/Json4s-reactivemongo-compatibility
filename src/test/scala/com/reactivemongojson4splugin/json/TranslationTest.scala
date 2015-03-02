@@ -1,6 +1,6 @@
-package com.jacoby6000.json
+package com.reactivemongojson4splugin.json
 
-import com.jacoby6000.json.json4s.BSONFormats
+import com.reactivemongojson4splugin.json4s.BSONFormats
 import org.scalatest.FlatSpec
 import org.json4s._
 import org.json4s.JsonDSL._
@@ -11,7 +11,7 @@ import org.json4s.jackson.JsonMethods._
  * Created by jbarber on 2/26/15.
  */
 class TranslationTest extends FlatSpec {
-  import com.jacoby6000.json.json4s.BSONFormats._
+  import com.reactivemongojson4splugin.json4s.BSONFormats._
 
 
   val testJson =

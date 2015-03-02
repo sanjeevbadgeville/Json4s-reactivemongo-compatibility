@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package reactivemongo
+package com.reactivemongojson4splugin.reactivemongo
 
 import org.json4s.Reader
 import reactivemongo.api.collections.BufferReader

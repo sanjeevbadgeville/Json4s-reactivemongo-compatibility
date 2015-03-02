@@ -18,14 +18,14 @@
  * limitations under the License.
  */
 
-package reactivemongo.api
+package com.reactivemongojson4splugin.reactivemongo.api
 
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s.{Reader, Formats}
 import org.json4s.JsonAST.JObject
 import play.api.libs.iteratee._
-import reactivemongo.utils.ExtendedFutures
-import reactivemongo.{JSONGenericHandlers, JSONDocumentReaderAsBufferReader}
+import reactivemongo.api._
+import reactivemongo.utils.{LazyLogger, ExtendedFutures}
 import reactivemongo.api.collections.BufferReader
 import reactivemongo.core.iteratees.{CustomEnumeratee, CustomEnumerator}
 import reactivemongo.core.netty.{ChannelBufferReadableBuffer, BufferSequence}
@@ -42,7 +42,8 @@ class ReflectiveCursor[T](
                         readPreference: ReadPreference,
                         mongoConnection: MongoConnection,
                         failoverStrategy: FailoverStrategy)(implicit ev1: Manifest[T], reader: BufferReader[JObject], formats: Formats) extends Cursor[T] {
-  import Cursor.logger
+
+  private[api] val logger = LazyLogger("com.jacoby6000.reactivemongo.api.ReflectiveCursor")
 
 
   private def next(response: Response)(implicit ctx: ExecutionContext): Option[Future[Response]] = {
@@ -136,7 +137,7 @@ class ReflectiveCursor[T](
 
   def enumerate(maxDocs: Int = Int.MaxValue, stopOnError: Boolean = false)(implicit ctx: ExecutionContext): Enumerator[T] = {
     @tailrec
-    def next(it: Iterator[JObject], stopOnError: Boolean): Option[Try[JObject]] = {
+    def next(it: Iterator[T], stopOnError: Boolean): Option[Try[T]] = {
       if (it.hasNext) {
         val tried = Try(it.next())
         if (tried.isFailure && !stopOnError)
@@ -145,7 +146,7 @@ class ReflectiveCursor[T](
       } else None
     }
     enumerateResponses(maxDocs, stopOnError) &> Enumeratee.mapFlatten { response =>
-      val iterator = ReplyDocumentIterator(response.reply, response.documents)
+      val iterator = ReflectiveReplyDocumentIterator(response.reply, response.documents)
       if(!iterator.hasNext)
         Enumerator.empty
       else
@@ -154,7 +155,7 @@ class ReflectiveCursor[T](
             case Success(mt) => Future.successful(mt)
             case Failure(e)  => Future.failed(e)
           }
-        }.map(_.extract[T])
+        }
     }
   }
 

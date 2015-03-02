@@ -1,4 +1,4 @@
-package com.jacoby6000.json
+package com.reactivemongojson4splugin.json
 
 import _root_.reactivemongo.bson.{BSONDocumentReader, BSONDocumentWriter, BSONDocument}
 
