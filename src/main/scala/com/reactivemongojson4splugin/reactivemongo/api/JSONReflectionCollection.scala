@@ -48,7 +48,7 @@ case class JSONReflectionCollection(
 
   private def writeDoc[T](doc: T)(implicit formats: Formats): ChannelBuffer = {
     val buffer = ChannelBufferWritableBuffer()
-    StructureBufferWriter.write(Extraction.decompose(doc).extract[JObject], buffer).buffer
+    StructureBufferWriter.write(Extraction.decompose(doc).asInstanceOf[JObject], buffer).buffer
   }
 
   /**
@@ -77,7 +77,7 @@ case class JSONReflectionCollection(
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
   def find[S](selector: S)(implicit formats: Formats): JSONReflectionQueryBuilder =
-    genericQueryBuilder.query(decompose(selector))(JValueWriter)
+    genericQueryBuilder.query(selector)(formats)
 
   /**
    * Find the documents matching the given criteria.
@@ -95,7 +95,7 @@ case class JSONReflectionCollection(
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
   def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionFormats: Formats): JSONReflectionQueryBuilder =
-    genericQueryBuilder.query(decompose(selector)(selectorFormats)).projection(decompose(projection)(projectionFormats))
+    genericQueryBuilder.query(selector)(selectorFormats).projection(projection)(projectionFormats)
 
   /**
    * Find the documents matching the given criteria.
@@ -113,7 +113,7 @@ case class JSONReflectionCollection(
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
   def find[S, P](selector: S, projection: P)(implicit selectorWriter: Writer[S], projectionFormats: Formats): JSONReflectionQueryBuilder =
-    genericQueryBuilder.query(selectorWriter.write(selector)).projection(decompose(projection)(projectionFormats))
+    genericQueryBuilder.query(selectorWriter.write(selector)).projection(projection)
 
   /**
    * Find the documents matching the given criteria.
@@ -131,7 +131,7 @@ case class JSONReflectionCollection(
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
   def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionWriter: Writer[P]): JSONReflectionQueryBuilder =
-    genericQueryBuilder.query(decompose(selector)(selectorFormats)).projection(projectionWriter.write(projection))
+    genericQueryBuilder.query(selector)(selectorFormats).projection(projectionWriter.write(projection))
 
   /**
    * Inserts a document into the collection and wait for the [reactivemongo.core.commands.LastError] result.
@@ -146,10 +146,10 @@ case class JSONReflectionCollection(
    * @return a future [reactivemongo.core.commands.LastError] that can be used to check whether the insertion was successful.
    */
   def insert[T](document: T, writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
-    insert(decompose(document).extract[JObject], writeConcern)(formats, ec)
+    insert(decompose(document).asInstanceOf[JObject], writeConcern)(formats, ec)
 
   def insert[T](document: T)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
-    insert(decompose(document).extract[JObject], GetLastError())(formats, ec)
+    insert(decompose(document).asInstanceOf[JObject], GetLastError())(formats, ec)
 
 
   /**

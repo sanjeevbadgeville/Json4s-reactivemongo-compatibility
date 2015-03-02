@@ -23,6 +23,7 @@ package com.reactivemongojson4splugin.reactivemongo
 import com.reactivemongojson4splugin.reactivemongo.api.ReflectiveCursor
 import org.json4s._
 import reactivemongo.api._
+import reactivemongo.api.collections.GenericQueryBuilder
 import reactivemongo.core.netty.{BufferSequence, ChannelBufferWritableBuffer}
 import reactivemongo.core.protocol.{Query, QueryFlags}
 
@@ -50,7 +51,6 @@ case class JSONReflectionQueryBuilder(
 
 
   type Self = JSONReflectionQueryBuilder
-
 
   def copy(queryOption: Option[JObject], sortOption: Option[JObject], projectionOption: Option[JObject], hintOption: Option[JObject], explainFlag: Boolean, snapshotFlag: Boolean, commentString: Option[String], options: QueryOpts, failover: FailoverStrategy): JSONReflectionQueryBuilder =
     JSONReflectionQueryBuilder(collection, failover, queryOption, sortOption, projectionOption, hintOption, explainFlag, snapshotFlag, commentString, options)
@@ -106,6 +106,25 @@ case class JSONReflectionQueryBuilder(
    *
    * @tparam Pjn The type of the projection. An implicit `Writer][Pjn]` typeclass for handling it has to be in the scope.
    */
-  def projection[Pjn: Manifest](p: Pjn)(implicit formats: Formats): Self = copy(projectionOption = Some(
-    decompose(p).extract[JObject]))
+  def projection[Pjn](p: Pjn)(implicit formats: Formats): Self = copy(projectionOption = Some(
+    decompose(p).asInstanceOf[JObject]
+  ))
+
+  def projection(p: JValue)(implicit formats: Formats): Self = copy(projectionOption = Some(
+    p.asInstanceOf[JObject]
+  ))
+
+  /**
+   * Sets the query (the selector document).
+   *
+   * @tparam Qry The type of the query. An implicit `Formats` typeclass for handling it has to be in the scope.
+   */
+  def query[Qry](selector: Qry)(implicit formats: Formats): Self = copy(queryOption = Some(
+    decompose(selector)(formats).asInstanceOf[JObject]
+  ))
+
+  def query(jv: JValue): Self = copy(queryOption = Some(
+    jv.asInstanceOf[JObject]
+  ))
+
 }
