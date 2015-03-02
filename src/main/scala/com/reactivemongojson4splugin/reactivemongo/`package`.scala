@@ -29,7 +29,9 @@ import reactivemongo.api.{DB, FailoverStrategy}
  * A Collection that interacts with the Json4s library, using `Reader` and `Writer`.
  */
 object `package` {
+
   implicit object JSONCollectionProducer extends GenericCollectionProducer[JObject, Reader, Writer, JSONReflectionCollection] {
     def apply(db: DB, name: String, failoverStrategy: FailoverStrategy) = new JSONReflectionCollection(db, name, failoverStrategy)
   }
+
 }

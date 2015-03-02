@@ -1,6 +1,6 @@
 package com.reactivemongojson4splugin.json
 
-import _root_.reactivemongo.bson.{BSONDocumentReader, BSONDocumentWriter, BSONDocument}
+import _root_.reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter}
 
 /**
  * Created by jbarber on 2/26/15.

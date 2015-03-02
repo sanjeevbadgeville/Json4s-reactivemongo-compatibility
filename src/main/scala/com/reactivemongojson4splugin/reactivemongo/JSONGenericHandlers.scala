@@ -31,6 +31,7 @@ import reactivemongo.bson.buffer.ReadableBuffer
 object JSONGenericHandlers extends JSONGenericHandlers
 
 trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
+
   import com.reactivemongojson4splugin.json4s.BSONFormats._
 
   object StructureBufferReader extends BufferReader[JObject] {
@@ -47,12 +48,15 @@ trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
       buffer
     }
   }
+
   case class BSONStructureReader[T](reader: Reader[T]) extends GenericReader[JObject, T] {
     def read(doc: JObject) = reader.read(doc)
   }
+
   case class BSONStructureWriter[T](writer: Writer[T]) extends GenericWriter[T, JObject] {
     def write(t: T) = writer.write(t).extract[JObject]
   }
+
   def StructureReader[T](reader: Reader[T]) = BSONStructureReader(reader)
   def StructureWriter[T](writer: Writer[T]): GenericWriter[T, JObject] = BSONStructureWriter(writer)
 }

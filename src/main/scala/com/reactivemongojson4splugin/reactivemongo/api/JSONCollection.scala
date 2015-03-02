@@ -21,11 +21,12 @@
 package com.reactivemongojson4splugin.reactivemongo.api
 
 import com.reactivemongojson4splugin.json4s.BSONFormats.{BSONObjectIDFormat, JValueWriter}
-import com.reactivemongojson4splugin.reactivemongo.{JSONQueryBuilder, JSONGenericHandlers}
+import com.reactivemongojson4splugin.reactivemongo.{JSONGenericHandlers, JSONQueryBuilder}
 import org.json4s._
-import reactivemongo.api.{CollectionMetaCommands, FailoverStrategy, DB}
-import reactivemongo.api.collections.{GenericQueryBuilder, GenericCollection, GenericHandlers}
+import reactivemongo.api.collections.{GenericCollection, GenericHandlers, GenericQueryBuilder}
+import reactivemongo.api.{CollectionMetaCommands, DB, FailoverStrategy}
 import reactivemongo.core.commands.{GetLastError, LastError}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 /**

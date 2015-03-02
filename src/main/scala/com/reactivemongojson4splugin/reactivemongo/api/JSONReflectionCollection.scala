@@ -21,25 +21,27 @@
 package com.reactivemongojson4splugin.reactivemongo.api
 
 import com.reactivemongojson4splugin.json4s.BSONFormats.JValueWriter
-import com.reactivemongojson4splugin.reactivemongo.{JSONReflectionQueryBuilder, JSONGenericHandlers}
+import com.reactivemongojson4splugin.reactivemongo.{JSONGenericHandlers, JSONReflectionQueryBuilder}
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s._
-import play.api.libs.iteratee.{Enumeratee, Iteratee, Enumerator}
+import play.api.libs.iteratee.{Enumeratee, Enumerator, Iteratee}
 import reactivemongo.api._
 import reactivemongo.api.collections.GenericHandlers
 import reactivemongo.core.commands.{GetLastError, LastError}
-import reactivemongo.core.netty.{ChannelBufferWritableBuffer, BufferSequence}
+import reactivemongo.core.netty.{BufferSequence, ChannelBufferWritableBuffer}
 import reactivemongo.core.protocol._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * A Collection that interacts with the Play JSON library, using `Reader` and `Writer`.
  */
 case class JSONReflectionCollection(
-                           db: DB,
-                           name: String,
-                           failoverStrategy: FailoverStrategy) extends JSONCollectionLike with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
-  import Extraction._
+                                     db: DB,
+                                     name: String,
+                                     failoverStrategy: FailoverStrategy) extends JSONCollectionLike with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
+
+  import org.json4s.Extraction._
   import reactivemongo.utils.EitherMappableFuture._
 
   def genericQueryBuilder = JSONReflectionQueryBuilder(this, failoverStrategy)
@@ -143,11 +145,11 @@ case class JSONReflectionCollection(
    *
    * @return a future [reactivemongo.core.commands.LastError] that can be used to check whether the insertion was successful.
    */
-  def insert[T](document: T, writeConcern: GetLastError)(implicit formats: Formats,  ec: ExecutionContext): Future[LastError] =
-    insert(decompose(document).extract[JObject],writeConcern)(formats, ec)
+  def insert[T](document: T, writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
+    insert(decompose(document).extract[JObject], writeConcern)(formats, ec)
 
-  def insert[T](document: T)(implicit formats: Formats,  ec: ExecutionContext): Future[LastError] =
-    insert(decompose(document).extract[JObject],GetLastError())(formats, ec)
+  def insert[T](document: T)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
+    insert(decompose(document).extract[JObject], GetLastError())(formats, ec)
 
 
   /**
@@ -237,7 +239,7 @@ case class JSONReflectionCollection(
 
 
   def bulkInsertIteratee[T](writeConcern: GetLastError, bulkSize: Int, bulkByteSize: Int)(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
-    Enumeratee.map { doc: T => writeDoc(doc)(formats) } &>> bulk.iteratee(this, writeConcern, bulkSize, bulkByteSize)(ec)
+    Enumeratee.map { doc: T => writeDoc(doc)(formats)} &>> bulk.iteratee(this, writeConcern, bulkSize, bulkByteSize)(ec)
 
   def bulkInsertIteratee[T](writeConcern: GetLastError, bulkSize: Int)(implicit formats: Formats, ec: ExecutionContext): Iteratee[T, Int] =
     bulkInsertIteratee(writeConcern, bulkSize, bulk.MaxBulkSize)(formats, ec)
@@ -269,7 +271,7 @@ case class JSONReflectionCollection(
   def uncheckedRemove[T](query: T)(implicit formats: Formats, ec: ExecutionContext): Unit =
     uncheckedRemove(query, firstMatchOnly = false)
 
-    /**
+  /**
    * Updates one or more documents matching the given selector with the given modifier or update object.
    *
    * Please note that you cannot be sure that the matched documents have been effectively updated and when (hence the Unit return type).
@@ -283,14 +285,14 @@ case class JSONReflectionCollection(
    * @param multi states whether the update may be done on all the matching documents.
    */
   def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean, multi: Boolean)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit = {
-    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update,updateWriter), upsert, multi)
+    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update, updateWriter), upsert, multi)
   }
 
   def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit =
-    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update,updateWriter), upsert, multi = false)
+    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update, updateWriter), upsert, multi = false)
 
   def uncheckedUpdate[S, U](selector: S, update: U)(implicit selectorFormats: Formats, updateWriter: Writer[U]): Unit =
-    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update,updateWriter), upsert = false, multi = false)
+    uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update, updateWriter), upsert = false, multi = false)
 
 
   /**
@@ -313,10 +315,8 @@ case class JSONReflectionCollection(
   def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean)(implicit selectorWriter: Writer[S], updateFormats: Formats): Unit =
     uncheckedUpdate(writeDoc(selector, selectorWriter), writeDoc(update)(updateFormats), upsert, multi = false)
 
-
   def uncheckedUpdate[S, U](selector: S, update: U)(implicit selectorWriter: Writer[S], updateFormats: Formats): Unit =
     uncheckedUpdate(writeDoc(selector, selectorWriter), writeDoc(update)(updateFormats), upsert = false, multi = false)
-
 
 
   /**
@@ -339,12 +339,11 @@ case class JSONReflectionCollection(
   def uncheckedUpdate[S, U](selector: S, update: U, upsert: Boolean)(implicit selectorFormats: Formats, updateFormats: Formats): Unit =
     uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update)(updateFormats), upsert, multi = false)
 
-
   def uncheckedUpdate[S, U](selector: S, update: U)(implicit selectorFormats: Formats, updateFormats: Formats): Unit =
     uncheckedUpdate(writeDoc(selector)(selectorFormats), writeDoc(update)(updateFormats), upsert = false, multi = false)
 
 
-    /**
+  /**
    * Updates one or more documents matching the given selector with the given modifier or update object.
    *
    * Please note that you cannot be sure that the matched documents have been effectively updated and when (hence the Unit return type).

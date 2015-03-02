@@ -40,7 +40,7 @@ trait JSONQueryBuilderLike extends GenericQueryBuilder[JObject, Reader, Writer] 
   val snapshotFlag: Boolean
   val commentString: Option[String]
   val options: QueryOpts
-  
+
   import reactivemongo.utils.option
 
   implicit val formats: Formats

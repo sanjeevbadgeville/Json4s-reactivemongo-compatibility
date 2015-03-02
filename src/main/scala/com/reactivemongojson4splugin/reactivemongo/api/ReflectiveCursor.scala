@@ -22,14 +22,13 @@ package com.reactivemongojson4splugin.reactivemongo.api
 
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s._
-import org.json4s.JsonAST.JObject
 import play.api.libs.iteratee._
 import reactivemongo.api._
-import reactivemongo.utils.{LazyLogger, ExtendedFutures}
 import reactivemongo.api.collections.BufferReader
 import reactivemongo.core.iteratees.{CustomEnumeratee, CustomEnumerator}
-import reactivemongo.core.netty.{ChannelBufferReadableBuffer, BufferSequence}
+import reactivemongo.core.netty.{BufferSequence, ChannelBufferReadableBuffer}
 import reactivemongo.core.protocol._
+import reactivemongo.utils.{ExtendedFutures, LazyLogger}
 
 import scala.annotation.tailrec
 import scala.collection.generic.CanBuildFrom
@@ -37,11 +36,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class ReflectiveCursor[T](
-                        query: Query,
-                        documents: BufferSequence,
-                        readPreference: ReadPreference,
-                        mongoConnection: MongoConnection,
-                        failoverStrategy: FailoverStrategy)(implicit ev1: Manifest[T], reader: BufferReader[JValue], formats: Formats) extends Cursor[T] {
+                           query: Query,
+                           documents: BufferSequence,
+                           readPreference: ReadPreference,
+                           mongoConnection: MongoConnection,
+                           failoverStrategy: FailoverStrategy)(implicit ev1: Manifest[T], reader: BufferReader[JValue], formats: Formats) extends Cursor[T] {
 
   private[api] val logger = LazyLogger("com.jacoby6000.reactivemongo.api.ReflectiveCursor")
 
@@ -147,13 +146,13 @@ class ReflectiveCursor[T](
     }
     enumerateResponses(maxDocs, stopOnError) &> Enumeratee.mapFlatten { response =>
       val iterator = ReflectiveReplyDocumentIterator(response.reply, response.documents)
-      if(!iterator.hasNext)
+      if (!iterator.hasNext)
         Enumerator.empty
       else
         CustomEnumerator.SEnumerator(iterator.next()) { _ =>
           next(iterator, stopOnError).map {
             case Success(mt) => Future.successful(mt)
-            case Failure(e)  => Future.failed(e)
+            case Failure(e) => Future.failed(e)
           }
         }
     }
@@ -162,7 +161,11 @@ class ReflectiveCursor[T](
   def collect[M[_]](upTo: Int = Int.MaxValue, stopOnError: Boolean = true)(implicit cbf: CanBuildFrom[M[_], T, M[T]], ctx: ExecutionContext): Future[M[T]] = {
     (enumerateResponses(upTo, stopOnError) |>>> Iteratee.fold(cbf.apply()) { (builder, response) =>
 
-      def tried[U](it: Iterator[U]) = new Iterator[Try[U]] { def hasNext = it.hasNext; def next() = Try(it.next()) }
+      def tried[U](it: Iterator[U]) = new Iterator[Try[U]] {
+        def hasNext = it.hasNext
+
+        def next() = Try(it.next())
+      }
 
       logger.trace(s"[collect] got response $response")
 
@@ -181,6 +184,7 @@ class ReflectiveCursor[T](
 
 private[reactivemongo] case class ReflectiveReplyDocumentIterator[T: Manifest](private val reply: Reply, private val buffer: ChannelBuffer)(implicit reader: BufferReader[JValue], formats: Formats) extends Iterator[T] {
   def hasNext = buffer.readable
+
   def next =
     try {
       reader.read(ChannelBufferReadableBuffer(buffer.readBytes(buffer.getInt(buffer.readerIndex)))).extract[T]

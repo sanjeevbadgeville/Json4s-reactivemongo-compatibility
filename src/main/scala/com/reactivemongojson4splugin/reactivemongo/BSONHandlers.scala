@@ -22,15 +22,18 @@ package com.reactivemongojson4splugin.reactivemongo
 
 import com.reactivemongojson4splugin.json4s.BSONFormats
 import org.json4s._
-import reactivemongo.bson.{BSONDocumentWriter, BSONDocumentReader, BSONDocument}
+import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter}
 
 trait LowerImplicitBSONHandlers {
+
   implicit object JValueWriter extends BSONDocumentWriter[JValue] {
     def write(JValue: JValue) = BSONFormats.BSONDocumentFormat.read(JValue)
   }
+
   implicit object JValueReader extends BSONDocumentReader[JValue] {
     def read(document: BSONDocument): JValue = BSONFormats.BSONDocumentFormat.write(document)
   }
+
 }
 
 trait ImplicitBSONHandlers extends LowerImplicitBSONHandlers {
@@ -45,6 +48,7 @@ trait ImplicitBSONHandlers extends LowerImplicitBSONHandlers {
     def read(document: BSONDocument): JObject =
       BSONFormats.BSONDocumentFormat.write(document).extract[JObject]
   }
+
 }
 
 /**

@@ -1,16 +1,15 @@
 package com.reactivemongojson4splugin.json
 
 import com.reactivemongojson4splugin.json4s.BSONFormats
-import org.scalatest.FlatSpec
 import org.json4s._
-import org.json4s.JsonDSL._
-import org.json4s.JsonAST._
 import org.json4s.jackson.JsonMethods._
+import org.scalatest.FlatSpec
 
 /**
  * Created by jbarber on 2/26/15.
  */
 class TranslationTest extends FlatSpec {
+
   import com.reactivemongojson4splugin.json4s.BSONFormats._
 
 
