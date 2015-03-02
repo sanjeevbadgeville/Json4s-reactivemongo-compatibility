@@ -38,13 +38,13 @@ trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
     def writeBuffer(buffer: ReadableBuffer) = BSONDocumentFormat.write(BSONDocument.read(buffer))
 
     def read(buffer: ReadableBuffer) = {
-      writeBuffer(buffer).extract[JObject]
+      writeBuffer(buffer).asInstanceOf[JObject]
     }
   }
 
   object StructureBufferWriter extends BufferWriter[JObject] {
     def write[B <: reactivemongo.bson.buffer.WritableBuffer](document: JObject, buffer: B): B = {
-      BSONDocument.write(document.extract[BSONDocument], buffer)
+      BSONDocument.write(document.as[BSONDocument], buffer)
       buffer
     }
   }
@@ -54,7 +54,7 @@ trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
   }
 
   case class BSONStructureWriter[T](writer: Writer[T]) extends GenericWriter[T, JObject] {
-    def write(t: T) = writer.write(t).extract[JObject]
+    def write(t: T) = writer.write(t).asInstanceOf[JObject]
   }
 
   def StructureReader[T](reader: Reader[T]) = BSONStructureReader(reader)

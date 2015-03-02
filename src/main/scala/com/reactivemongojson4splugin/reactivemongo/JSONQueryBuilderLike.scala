@@ -54,7 +54,7 @@ trait JSONQueryBuilderLike extends GenericQueryBuilder[JObject, Reader, Writer] 
   }
 
   object structureReader extends Reader[JObject] {
-    def read(json: JValue): JObject = json.extract[JObject]
+    def read(json: JValue): JObject = json.asInstanceOf[JObject]
   }
 
   def convert[T](reader: Reader[T]): BufferReader[T] = JSONDocumentReaderAsBufferReader(reader)
@@ -68,7 +68,7 @@ trait JSONQueryBuilderLike extends GenericQueryBuilder[JObject, Reader, Writer] 
         hintOption.map(o => JObject("$hint" -> o)).getOrElse(empty) ++
         commentString.map(o => JObject("$comment" -> JString(o))).getOrElse(empty) ++
         option(explainFlag, JBool(true)).map(o => JObject("$explain" -> o)).getOrElse(empty) ++
-        option(snapshotFlag, JBool(true)).map(o => JObject("$snapshot" -> o)).getOrElse(empty)).extract[JObject]
+        option(snapshotFlag, JBool(true)).map(o => JObject("$snapshot" -> o)).getOrElse(empty)).asInstanceOf[JObject]
     }
   }
 
