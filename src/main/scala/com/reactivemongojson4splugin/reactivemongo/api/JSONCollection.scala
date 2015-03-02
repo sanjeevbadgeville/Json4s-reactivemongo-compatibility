@@ -24,16 +24,16 @@ import com.reactivemongojson4splugin.json4s.BSONFormats.{BSONObjectIDFormat, JVa
 import com.reactivemongojson4splugin.reactivemongo.{JSONQueryBuilder, JSONGenericHandlers}
 import org.json4s._
 import reactivemongo.api.{CollectionMetaCommands, FailoverStrategy, DB}
-import reactivemongo.api.collections.{GenericCollection, GenericHandlers}
+import reactivemongo.api.collections.{GenericQueryBuilder, GenericCollection, GenericHandlers}
 import reactivemongo.core.commands.{GetLastError, LastError}
-import reactivemongo.core.netty.ChannelBufferWritableBuffer
-
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * A Collection that interacts with the Play JSON library, using `Reader` and `Writer`.
  */
-case class JSONCollection(db: DB, name: String, failoverStrategy: FailoverStrategy) extends JSONCollectionLike
+case class JSONCollection(db: DB, name: String, failoverStrategy: FailoverStrategy) extends JSONCollectionLike {
+  def genericQueryBuilder = JSONQueryBuilder(this, failoverStrategy)
+}
 
 trait JSONCollectionLike extends GenericCollection[JObject, Reader, Writer] with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
 
@@ -41,7 +41,7 @@ trait JSONCollectionLike extends GenericCollection[JObject, Reader, Writer] with
   val name: String
   val failoverStrategy: FailoverStrategy
 
-  def genericQueryBuilder: JSONQueryBuilder = JSONQueryBuilder(this, failoverStrategy)
+  def genericQueryBuilder: GenericQueryBuilder[JObject, Reader, Writer]
 
   /**
    * Inserts the document, or updates it if it already exists in the collection.

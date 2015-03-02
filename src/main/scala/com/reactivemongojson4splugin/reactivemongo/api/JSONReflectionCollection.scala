@@ -20,8 +20,8 @@
 
 package com.reactivemongojson4splugin.reactivemongo.api
 
-import com.reactivemongojson4splugin.json4s.BSONFormats.{JValueWriter, BSONObjectIDFormat}
-import com.reactivemongojson4splugin.reactivemongo.{JSONQueryBuilder, JSONGenericHandlers}
+import com.reactivemongojson4splugin.json4s.BSONFormats.JValueWriter
+import com.reactivemongojson4splugin.reactivemongo.{JSONReflectionQueryBuilder, JSONGenericHandlers}
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s._
 import play.api.libs.iteratee.{Enumeratee, Iteratee, Enumerator}
@@ -41,6 +41,8 @@ case class JSONReflectionCollection(
                            failoverStrategy: FailoverStrategy) extends JSONCollectionLike with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
   import Extraction._
   import reactivemongo.utils.EitherMappableFuture._
+
+  def genericQueryBuilder = JSONReflectionQueryBuilder(this, failoverStrategy)
 
   private def writeDoc[T](doc: T)(implicit formats: Formats): ChannelBuffer = {
     val buffer = ChannelBufferWritableBuffer()
@@ -72,7 +74,7 @@ case class JSONReflectionCollection(
    *
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
-  def find[S](selector: S)(implicit formats: Formats): JSONQueryBuilder =
+  def find[S](selector: S)(implicit formats: Formats): JSONReflectionQueryBuilder =
     genericQueryBuilder.query(decompose(selector))(JValueWriter)
 
   /**
@@ -90,7 +92,7 @@ case class JSONReflectionCollection(
    *
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
-  def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionFormats: Formats): JSONQueryBuilder =
+  def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionFormats: Formats): JSONReflectionQueryBuilder =
     genericQueryBuilder.query(decompose(selector)(selectorFormats)).projection(decompose(projection)(projectionFormats))
 
   /**
@@ -108,7 +110,7 @@ case class JSONReflectionCollection(
    *
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
-  def find[S, P](selector: S, projection: P)(implicit selectorWriter: Writer[S], projectionFormats: Formats): JSONQueryBuilder =
+  def find[S, P](selector: S, projection: P)(implicit selectorWriter: Writer[S], projectionFormats: Formats): JSONReflectionQueryBuilder =
     genericQueryBuilder.query(selectorWriter.write(selector)).projection(decompose(projection)(projectionFormats))
 
   /**
@@ -126,7 +128,7 @@ case class JSONReflectionCollection(
    *
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
-  def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionWriter: Writer[P]): JSONQueryBuilder =
+  def find[S, P](selector: S, projection: P)(implicit selectorFormats: Formats, projectionWriter: Writer[P]): JSONReflectionQueryBuilder =
     genericQueryBuilder.query(decompose(selector)(selectorFormats)).projection(projectionWriter.write(projection))
 
   /**

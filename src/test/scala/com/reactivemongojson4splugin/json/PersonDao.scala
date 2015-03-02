@@ -7,7 +7,6 @@ package com.reactivemongojson4splugin.json
 
 import com.reactivemongojson4splugin.reactivemongo.JSONGenericHandlers
 import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
-import org.json4s.Extraction
 import reactivemongo.api.DefaultDB
 import org.json4s.JsonAST._
 import reactivemongo.core.commands.GetLastError

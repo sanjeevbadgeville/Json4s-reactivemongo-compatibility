@@ -21,7 +21,7 @@
 package com.reactivemongojson4splugin.reactivemongo.api
 
 import org.jboss.netty.buffer.ChannelBuffer
-import org.json4s.{Reader, Formats}
+import org.json4s.Formats
 import org.json4s.JsonAST.JObject
 import play.api.libs.iteratee._
 import reactivemongo.api._
