@@ -7,9 +7,10 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.scalatest.FlatSpec
 import reactivemongo.api.{MongoDriver, MongoConnection}
+import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.commands.LastError
 
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 
 /**
@@ -77,23 +78,29 @@ class TranslationTest extends FlatSpec {
     assert(backToJson === parsed)
   }
 
-  val id = 16
+  "A complicated insert" should "pass" in {
+    extractAndReadErrors(personDao.insert(parse(testJson).extract[Person]))
+  }
+
+  val id = BSONObjectID.generate
   "A simple insert" should "succeed" in {
-    Await.result(db.collection[JSONReflectionCollection]("simple_collection_test").insert(SimpleObject(id, "test", None, new Date)).collect {
-      case e: LastError =>
-        println(e.code)
-        println(e.err)
-        println(e.errMsg)
-        None
-    }, 5 seconds)
+    extractAndReadErrors(db.collection[JSONReflectionCollection]("simple_collection_test").insert(SimpleObject(id, "test", Some(false), new Date)))
   }
 
   "A delete" should "succeed" in {
-    Await.result(db.collection[JSONReflectionCollection]("simple_collection_test").remove(SimpleObject(id, "test", None, new Date)).collect {
+    extractAndReadErrors(db.collection[JSONReflectionCollection]("simple_collection_test").remove(SimpleObject(id, "test", None, new Date)))
+  }
+
+  def extractAndReadErrors(f: Future[LastError]): Unit = {
+    Await.result(f.collect {
       case e: LastError =>
-        println(e.code)
-        println(e.err)
-        println(e.errMsg)
+        e.code match {
+          case Some(_) =>
+            println(e.code)
+            println(e.err)
+            println(e.errMsg)
+          case None =>
+        }
         None
     }, 5 seconds)
   }
