@@ -20,7 +20,6 @@
 
 package com.reactivemongojson4splugin.reactivemongo
 
-import com.reactivemongojson4splugin.json4s.BSONFormats
 import org.json4s._
 import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter}
 

@@ -1,16 +1,30 @@
 package com.reactivemongojson4splugin.json
 
-import com.reactivemongojson4splugin.json4s.BSONFormats
+import java.util.Date
+import com.reactivemongojson4splugin.reactivemongo.BSONFormats
+import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.scalatest.FlatSpec
+import reactivemongo.api.{MongoDriver, MongoConnection}
+import reactivemongo.core.commands.LastError
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
  * Created by jbarber on 2/26/15.
  */
 class TranslationTest extends FlatSpec {
 
-  import com.reactivemongojson4splugin.json4s.BSONFormats._
+  import BSONFormats._
+
+  implicit val ec = scala.concurrent.ExecutionContext.global
+
+  val driver = new MongoDriver
+  val connection = driver.connection(List("localhost"))
+  val db = connection.db("reactivemongojson4splugin")
+  val personDao = new PersonDao(db)
 
 
   val testJson =
@@ -60,9 +74,27 @@ class TranslationTest extends FlatSpec {
     val parsed = parse(testJson)
     val asBson = BSONFormats.toBSON(parsed)
     val backToJson = BSONFormats.toJSON(asBson.get)
-    println(pretty(render(parsed)))
-    println(pretty(render(backToJson)))
-
     assert(backToJson === parsed)
+  }
+
+  val id = 16
+  "A simple insert" should "succeed" in {
+    Await.result(db.collection[JSONReflectionCollection]("simple_collection_test").insert(SimpleObject(id, "test", None, new Date)).collect {
+      case e: LastError =>
+        println(e.code)
+        println(e.err)
+        println(e.errMsg)
+        None
+    }, 5 seconds)
+  }
+
+  "A delete" should "succeed" in {
+    Await.result(db.collection[JSONReflectionCollection]("simple_collection_test").remove(SimpleObject(id, "test", None, new Date)).collect {
+      case e: LastError =>
+        println(e.code)
+        println(e.err)
+        println(e.errMsg)
+        None
+    }, 5 seconds)
   }
 }

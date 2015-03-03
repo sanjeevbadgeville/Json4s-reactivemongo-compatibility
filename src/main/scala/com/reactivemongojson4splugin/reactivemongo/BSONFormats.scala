@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package com.reactivemongojson4splugin.json4s
+package com.reactivemongojson4splugin.reactivemongo
 
 import org.json4s.JsonAST.JValue
 import org.json4s._
@@ -73,16 +73,26 @@ object BSONFormats {
     def partialReads: PartialFunction[JValue, Option[BSONDocument]] = {
       case obj: JObject =>
         Some(BSONDocument(obj.obj.map { tuple =>
-          tuple._1 -> (toBSON(tuple._2) match {
+          mapKey(tuple._1) -> (toBSON(tuple._2) match {
             case Some(bson) => bson
             case None => throw new RuntimeException("Failed to read bson document key " + tuple._1 + " with value " + tuple._2.toString)
           })
         }))
     }
 
+    private def mapKey(key: String) = key match {
+      case "id" => "_id"
+      case x => x
+    }
+
+    private def reverseMapKey(key: String) = key match {
+      case "_id" => "id"
+      case x => x
+    }
+
     val partialWrites: PartialFunction[BSONValue, JValue] = {
       case doc: BSONDocument => new JObject(doc.elements.map { elem =>
-        elem._1 -> toJSON(elem._2)
+        reverseMapKey(elem._1) -> toJSON(elem._2)
       }.toList)
     }
   }

@@ -32,13 +32,14 @@ object JSONGenericHandlers extends JSONGenericHandlers
 
 trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
 
-  import com.reactivemongojson4splugin.json4s.BSONFormats._
+  import BSONFormats._
+  import DefaultJsonFormats._
 
   object StructureBufferReader extends BufferReader[JObject] {
     def writeBuffer(buffer: ReadableBuffer) = BSONDocumentFormat.write(BSONDocument.read(buffer))
 
     def read(buffer: ReadableBuffer) = {
-      writeBuffer(buffer).asInstanceOf[JObject]
+      writeBuffer(buffer).as[JObject]
     }
   }
 
@@ -54,7 +55,7 @@ trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
   }
 
   case class BSONStructureWriter[T](writer: Writer[T]) extends GenericWriter[T, JObject] {
-    def write(t: T) = writer.write(t).asInstanceOf[JObject]
+    def write(t: T) = writer.write(t).as[JObject]
   }
 
   def StructureReader[T](reader: Reader[T]) = BSONStructureReader(reader)

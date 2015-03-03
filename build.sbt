@@ -10,3 +10,11 @@ libraryDependencies ++= Seq(
   "org.reactivemongo" %% "reactivemongo"        % "0.10.5.0.akka23",
   "org.scalatest"      % "scalatest_2.11"       % "2.2.4" % "test"
 )
+
+scalacOptions in ThisBuild ++= Seq(
+  "-unchecked",
+  "-deprecation",
+  "-feature",
+  "-language:higherKinds",
+  "-language:postfixOps"
+)

@@ -20,7 +20,8 @@
 
 package com.reactivemongojson4splugin.reactivemongo.api
 
-import com.reactivemongojson4splugin.json4s.BSONFormats.JValueWriter
+import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHandlers, JSONReflectionQueryBuilder}
+import BSONFormats.JValueWriter
 import com.reactivemongojson4splugin.reactivemongo.{JSONGenericHandlers, JSONReflectionQueryBuilder}
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s._

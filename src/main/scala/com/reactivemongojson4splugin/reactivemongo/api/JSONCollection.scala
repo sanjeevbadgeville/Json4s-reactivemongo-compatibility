@@ -20,7 +20,8 @@
 
 package com.reactivemongojson4splugin.reactivemongo.api
 
-import com.reactivemongojson4splugin.json4s.BSONFormats.{BSONObjectIDFormat, JValueWriter}
+import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHandlers, JSONQueryBuilder}
+import BSONFormats.{BSONObjectIDFormat, JValueWriter}
 import com.reactivemongojson4splugin.reactivemongo.{JSONGenericHandlers, JSONQueryBuilder}
 import org.json4s._
 import reactivemongo.api.collections.{GenericCollection, GenericHandlers, GenericQueryBuilder}

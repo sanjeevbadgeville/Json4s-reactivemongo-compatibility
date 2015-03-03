@@ -5,18 +5,19 @@ package com.reactivemongojson4splugin.json
  *
  */
 
-import com.reactivemongojson4splugin.reactivemongo.JSONGenericHandlers
+import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHandlers}
 import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
 import org.json4s.JsonAST._
 import reactivemongo.api.DefaultDB
-import reactivemongo.core.commands.GetLastError
-
-import scala.concurrent.ExecutionContext
+import reactivemongo.core.commands.{LastError, GetLastError}
+import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration._
+import scala.util.Success
 
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) extends JSONGenericHandlers {
   val collection = db.collection[JSONReflectionCollection]("persons")
 
-  import com.reactivemongojson4splugin.json4s.BSONFormats._
+  import BSONFormats._
 
   def get(id: String) = {
     collection.find(JObject("_id" -> JString(id))).one[Person]
