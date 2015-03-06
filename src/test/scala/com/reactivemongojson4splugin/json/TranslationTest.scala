@@ -75,7 +75,7 @@ class TranslationTest extends FlatSpec {
     val parsed = parse(testJson)
     val asBson = BSONFormats.toBSON(parsed)
     val backToJson = BSONFormats.toJSON(asBson.get)
-    assert(backToJson === parsed)
+    assert(backToJson === parsed, pretty(backToJson))
   }
 
   "A complicated insert" should "pass" in {

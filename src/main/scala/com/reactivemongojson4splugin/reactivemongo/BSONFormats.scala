@@ -73,11 +73,15 @@ object BSONFormats {
     def partialReads: PartialFunction[JValue, Option[BSONDocument]] = {
       case obj: JObject =>
         Some(BSONDocument(obj.obj.map { tuple =>
-          mapKey(tuple._1) -> (toBSON(tuple._2) match {
-            case Some(bson) => bson
-            case None => throw new RuntimeException("Failed to read bson document key " + tuple._1 + " with value " + tuple._2.toString)
-          })
+          mapKey(tuple._1) -> mapValue(tuple)
         }))
+    }
+
+    def mapValue(tuple: (String, JValue)): BSONValue = {
+      toBSON(tuple._2) match {
+        case Some(bson) => bson
+        case None => throw new scala.RuntimeException("Failed to read bson document key " + tuple._1 + " with value " + tuple._2.toString)
+      }
     }
 
     private def mapKey(key: String) = key match {
