@@ -152,21 +152,23 @@ Quite a bit of code there... Not too bad if your data model will never change, a
 Lets compare that to a json4s implementation. We'll use the same json payload and case classes as above.
 
 ``` scala
-import org.json4s.Extraction
-import reactivemongo.api.{JSONCollection, DefaultDB}
+import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHandlers}
+import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
 import org.json4s.JsonAST._
+import reactivemongo.api.DefaultDB
 import scala.concurrent.ExecutionContext
 
-class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
-  val collection = db.collection[JSONCollection]("persons")
-  import com.jacoby6000.json4s.BSONFormats._
+class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) extends JSONGenericHandlers {
+  val collection = db.collection[JSONReflectionCollection]("persons")
+
+  import BSONFormats._
 
   def get(id: String) = {
-    collection.find(JObject("_id" -> JString(id))).extractOne[Person]
+    collection.find(JObject("_id" -> JString(id))).one[Person]
   }
 
   def insert(person: Person) = {
-    collection.save(Extraction.decompose(person))
+    collection.save(person)
   }
 }
 ```
@@ -178,23 +180,26 @@ case class Container(name: String, things: List[KVPair])
 case class Occupation(occupation: String = "ISIS", position: String)
 case class KVPair(name: String, value: Int)
 
-import org.json4s.Extraction
-import reactivemongo.api.{JSONCollection, DefaultDB}
+import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHandlers}
+import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
 import org.json4s.JsonAST._
+import reactivemongo.api.DefaultDB
 import scala.concurrent.ExecutionContext
 
-class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) {
-  val collection = db.collection[JSONCollection]("persons")
-  import com.jacoby6000.json4s.BSONFormats._
+class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) extends JSONGenericHandlers {
+  val collection = db.collection[JSONReflectionCollection]("persons")
+
+  import BSONFormats._
 
   def get(id: String) = {
-    collection.find(JObject("_id" -> JString(id))).extractOne[Person]
+    collection.find(JObject("_id" -> JString(id))).one[Person]
   }
 
   def insert(person: Person) = {
-    collection.save(Extraction.decompose(person))
+    collection.save(person)
   }
 }
+
 ```
 
 ##### Some things to clear up
@@ -207,6 +212,8 @@ super fast performance.
 
 This will not automatically serialize normal classes. See the json4s documentation for more details. Json4s requires
 custom serializers, similar to document readers and writers, in order to serialize classes.
+
+case classes with an "id" field will be mapped to "_id" when converted to bson, and vice versa.
 
 Currently BSONObjectIds are serialized straight in to strings, which means they'll be stored in mongo as strings.
 I'm working on a way around this.  I don't know enough about how json4s works yet to do it.
