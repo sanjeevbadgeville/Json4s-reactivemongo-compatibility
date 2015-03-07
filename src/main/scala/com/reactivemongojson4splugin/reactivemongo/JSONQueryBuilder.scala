@@ -29,10 +29,10 @@ import reactivemongo.api._
 case class JSONQueryBuilder(
                              collection: Collection,
                              failover: FailoverStrategy,
-                             queryOption: Option[JObject] = None,
-                             sortOption: Option[JObject] = None,
-                             projectionOption: Option[JObject] = None,
-                             hintOption: Option[JObject] = None,
+                             queryOption: Option[JValue] = None,
+                             sortOption: Option[JValue] = None,
+                             projectionOption: Option[JValue] = None,
+                             hintOption: Option[JValue] = None,
                              explainFlag: Boolean = false,
                              snapshotFlag: Boolean = false,
                              commentString: Option[String] = None,
@@ -43,7 +43,7 @@ case class JSONQueryBuilder(
 
   type Self = JSONQueryBuilder
 
-  def copy(queryOption: Option[JObject], sortOption: Option[JObject], projectionOption: Option[JObject], hintOption: Option[JObject], explainFlag: Boolean, snapshotFlag: Boolean, commentString: Option[String], options: QueryOpts, failover: FailoverStrategy): JSONQueryBuilder =
+  def copy(queryOption: Option[JValue], sortOption: Option[JValue], projectionOption: Option[JValue], hintOption: Option[JValue], explainFlag: Boolean, snapshotFlag: Boolean, commentString: Option[String], options: QueryOpts, failover: FailoverStrategy): JSONQueryBuilder =
     JSONQueryBuilder(collection, failover, queryOption, sortOption, projectionOption, hintOption, explainFlag, snapshotFlag, commentString, options)
 
 }

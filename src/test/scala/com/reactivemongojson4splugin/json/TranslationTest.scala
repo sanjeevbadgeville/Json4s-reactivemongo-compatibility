@@ -84,14 +84,14 @@ class TranslationTest extends FlatSpec {
 
   val id = BSONObjectID.generate
   "A simple insert" should "succeed" in {
-    extractAndReadErrors(db.collection[JSONReflectionCollection]("simple_collection_test").insert(SimpleObject(id, "test", Some(false), new Date)))
+    assert(extractAndReadErrors(db.collection[JSONReflectionCollection]("simple_collection_test").insert(SimpleObject(id, "test", Some(false), new Date))) === false)
   }
 
   "A delete" should "succeed" in {
-    extractAndReadErrors(db.collection[JSONReflectionCollection]("simple_collection_test").remove(SimpleObject(id, "test", None, new Date)))
+    assert(extractAndReadErrors(db.collection[JSONReflectionCollection]("simple_collection_test").remove(SimpleObject(id, "test", None, new Date))) === false)
   }
 
-  def extractAndReadErrors(f: Future[LastError]): Unit = {
+  def extractAndReadErrors(f: Future[LastError]): Boolean = {
     Await.result(f.collect {
       case e: LastError =>
         e.code match {
@@ -99,9 +99,10 @@ class TranslationTest extends FlatSpec {
             println(e.code)
             println(e.err)
             println(e.errMsg)
+            true
           case None =>
+            false
         }
-        None
     }, 5 seconds)
   }
 }

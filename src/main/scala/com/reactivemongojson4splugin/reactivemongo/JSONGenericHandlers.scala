@@ -30,34 +30,33 @@ import reactivemongo.bson.buffer.ReadableBuffer
  */
 object JSONGenericHandlers extends JSONGenericHandlers
 
-trait JSONGenericHandlers extends GenericHandlers[JObject, Reader, Writer] {
+trait JSONGenericHandlers extends GenericHandlers[JValue, Reader, Writer] {
 
   import BSONFormats._
-  import DefaultJsonFormats._
 
-  object StructureBufferReader extends BufferReader[JObject] {
+  object StructureBufferReader extends BufferReader[JValue] {
     def writeBuffer(buffer: ReadableBuffer) = BSONDocumentFormat.write(BSONDocument.read(buffer))
 
     def read(buffer: ReadableBuffer) = {
-      writeBuffer(buffer).as[JObject]
+      writeBuffer(buffer)
     }
   }
 
-  object StructureBufferWriter extends BufferWriter[JObject] {
-    def write[B <: reactivemongo.bson.buffer.WritableBuffer](document: JObject, buffer: B): B = {
+  object StructureBufferWriter extends BufferWriter[JValue] {
+    def write[B <: reactivemongo.bson.buffer.WritableBuffer](document: JValue, buffer: B): B = {
       BSONDocument.write(document.as[BSONDocument], buffer)
       buffer
     }
   }
 
-  case class BSONStructureReader[T](reader: Reader[T]) extends GenericReader[JObject, T] {
-    def read(doc: JObject) = reader.read(doc)
+  case class BSONStructureReader[T](reader: Reader[T]) extends GenericReader[JValue, T] {
+    def read(doc: JValue) = reader.read(doc)
   }
 
-  case class BSONStructureWriter[T](writer: Writer[T]) extends GenericWriter[T, JObject] {
-    def write(t: T) = writer.write(t).as[JObject]
+  case class BSONStructureWriter[T](writer: Writer[T]) extends GenericWriter[T, JValue] {
+    def write(t: T) = writer.write(t)
   }
 
   def StructureReader[T](reader: Reader[T]) = BSONStructureReader(reader)
-  def StructureWriter[T](writer: Writer[T]): GenericWriter[T, JObject] = BSONStructureWriter(writer)
+  def StructureWriter[T](writer: Writer[T]): GenericWriter[T, JValue] = BSONStructureWriter(writer)
 }

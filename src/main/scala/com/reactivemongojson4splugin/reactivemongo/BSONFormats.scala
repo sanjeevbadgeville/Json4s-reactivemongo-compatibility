@@ -32,13 +32,6 @@ object BSONFormats {
   implicit val formats = DefaultFormats
   implicit val ser = DefaultJsonFormats
 
-  /**
-   * I'm not sure why but I'm getting an error unless this is here.
-   */
-  implicit object JValueWriter extends Writer[JValue] {
-    def write(jv: JValue) = jv
-  }
-
   trait PartialFormat[T <: BSONValue] extends JsonFormat[T] {
     def partialReads: PartialFunction[JValue, Option[T]]
 

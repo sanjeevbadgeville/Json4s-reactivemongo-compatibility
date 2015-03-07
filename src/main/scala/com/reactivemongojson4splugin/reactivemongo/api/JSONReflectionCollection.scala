@@ -20,8 +20,6 @@
 
 package com.reactivemongojson4splugin.reactivemongo.api
 
-import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHandlers, JSONReflectionQueryBuilder}
-import BSONFormats.JValueWriter
 import com.reactivemongojson4splugin.reactivemongo.{JSONGenericHandlers, JSONReflectionQueryBuilder}
 import org.jboss.netty.buffer.ChannelBuffer
 import org.json4s._
@@ -40,7 +38,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class JSONReflectionCollection(
                                      db: DB,
                                      name: String,
-                                     failoverStrategy: FailoverStrategy) extends JSONCollectionLike with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
+                                     failoverStrategy: FailoverStrategy) extends JSONCollectionLike with GenericHandlers[JValue, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
 
   import org.json4s.Extraction._
   import reactivemongo.utils.EitherMappableFuture._
@@ -49,7 +47,7 @@ case class JSONReflectionCollection(
 
   private def writeDoc[T](doc: T)(implicit formats: Formats): ChannelBuffer = {
     val buffer = ChannelBufferWritableBuffer()
-    StructureBufferWriter.write(Extraction.decompose(doc).asInstanceOf[JObject], buffer).buffer
+    StructureBufferWriter.write(Extraction.decompose(doc), buffer).buffer
   }
 
   /**
@@ -114,7 +112,7 @@ case class JSONReflectionCollection(
    * @return a [GenericQueryBuilder] that you can use to to customize the query. You can obtain a cursor by calling the method [reactivemongo.api.Cursor] on this query builder.
    */
   def find[S, P](selector: S, projection: P)(implicit selectorWriter: Writer[S], projectionFormats: Formats): JSONReflectionQueryBuilder =
-    genericQueryBuilder.query(selectorWriter.write(selector)).projection(projection)
+    genericQueryBuilder.query(selectorWriter.write(selector)).projection(projection)(projectionFormats)
 
   /**
    * Find the documents matching the given criteria.
@@ -147,10 +145,10 @@ case class JSONReflectionCollection(
    * @return a future [reactivemongo.core.commands.LastError] that can be used to check whether the insertion was successful.
    */
   def insert[T](document: T, writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
-    insert(decompose(document).asInstanceOf[JObject], writeConcern)(formats, ec)
+    insert(decompose(document), writeConcern)(formats, ec)
 
   def insert[T](document: T)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] =
-    insert(decompose(document).asInstanceOf[JObject], GetLastError())(formats, ec)
+    insert(decompose(document), GetLastError())(formats, ec)
 
 
   /**
@@ -163,9 +161,9 @@ case class JSONReflectionCollection(
    *
    * @return a future [reactivemongo.core.commands.LastError] that can be used to check whether the insertion was successful.
    */
-  def insert(document: JObject, writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = super.insert(document, writeConcern)(ec)
+  def insert(document: JValue, writeConcern: GetLastError)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = super.insert(document, writeConcern)(ec)
 
-  def insert(document: JObject)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = insert(document, GetLastError())(formats, ec)
+  def insert(document: JValue)(implicit formats: Formats, ec: ExecutionContext): Future[LastError] = insert(document, GetLastError())(formats, ec)
 
   /**
    * Updates one or more documents matching the given selector with the given modifier or update object.

@@ -9,10 +9,7 @@ import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHand
 import com.reactivemongojson4splugin.reactivemongo.api.JSONReflectionCollection
 import org.json4s.JsonAST._
 import reactivemongo.api.DefaultDB
-import reactivemongo.core.commands.{LastError, GetLastError}
-import scala.concurrent.{Await, ExecutionContext}
-import scala.concurrent.duration._
-import scala.util.Success
+import scala.concurrent.ExecutionContext
 
 class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) extends JSONGenericHandlers {
   val collection = db.collection[JSONReflectionCollection]("persons")
@@ -24,7 +21,7 @@ class PersonDao(db: DefaultDB)(implicit val ec: ExecutionContext) extends JSONGe
   }
 
   def insert(person: Person) = {
-    collection.save(person, GetLastError())
+    collection.save(person)
   }
 }
 

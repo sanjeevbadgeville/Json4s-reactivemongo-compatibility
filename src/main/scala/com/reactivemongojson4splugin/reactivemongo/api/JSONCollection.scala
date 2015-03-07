@@ -20,8 +20,8 @@
 
 package com.reactivemongojson4splugin.reactivemongo.api
 
-import com.reactivemongojson4splugin.reactivemongo.{BSONFormats, JSONGenericHandlers, JSONQueryBuilder}
-import BSONFormats.{BSONObjectIDFormat, JValueWriter}
+import com.reactivemongojson4splugin.reactivemongo.BSONFormats
+import BSONFormats.BSONObjectIDFormat
 import com.reactivemongojson4splugin.reactivemongo.{JSONGenericHandlers, JSONQueryBuilder}
 import org.json4s._
 import reactivemongo.api.collections.{GenericCollection, GenericHandlers, GenericQueryBuilder}
@@ -37,20 +37,20 @@ case class JSONCollection(db: DB, name: String, failoverStrategy: FailoverStrate
   def genericQueryBuilder = JSONQueryBuilder(this, failoverStrategy)
 }
 
-trait JSONCollectionLike extends GenericCollection[JObject, Reader, Writer] with GenericHandlers[JObject, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
+trait JSONCollectionLike extends GenericCollection[JValue, Reader, Writer] with GenericHandlers[JValue, Reader, Writer] with CollectionMetaCommands with JSONGenericHandlers {
 
   val db: DB
   val name: String
   val failoverStrategy: FailoverStrategy
 
-  def genericQueryBuilder: GenericQueryBuilder[JObject, Reader, Writer]
+  def genericQueryBuilder: GenericQueryBuilder[JValue, Reader, Writer]
 
   /**
    * Inserts the document, or updates it if it already exists in the collection.
    *
    * @param doc The document to save.
    */
-  def save(doc: JObject)(implicit ec: ExecutionContext): Future[LastError] =
+  def save(doc: JValue)(implicit ec: ExecutionContext): Future[LastError] =
     save(doc, GetLastError())
 
   /**
@@ -61,10 +61,11 @@ trait JSONCollectionLike extends GenericCollection[JObject, Reader, Writer] with
    */
   def save(doc: JValue, writeConcern: GetLastError)(implicit ec: ExecutionContext): Future[LastError] = {
     import reactivemongo.bson._
+    import DefaultWriters._
 
     doc \ "_id" match {
-      case JNothing | JNull => super.insert(doc ++ JObject("_id" -> BSONObjectIDFormat.write(BSONObjectID.generate)), writeConcern)(JValueWriter, ec)
-      case id => super.update(JObject("_id" -> id), doc, writeConcern, upsert = true)(JValueWriter, JValueWriter, ec)
+      case JNothing | JNull => insert(doc ++ JObject("_id" -> BSONObjectIDFormat.write(BSONObjectID.generate)), writeConcern)(ec)
+      case id => update(JObject("_id" -> id), doc, writeConcern, upsert = true)
     }
   }
 

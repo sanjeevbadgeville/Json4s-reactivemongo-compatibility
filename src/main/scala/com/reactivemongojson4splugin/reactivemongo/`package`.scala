@@ -30,7 +30,7 @@ import reactivemongo.api.{DB, FailoverStrategy}
  */
 object `package` {
 
-  implicit object JSONCollectionProducer extends GenericCollectionProducer[JObject, Reader, Writer, JSONReflectionCollection] {
+  implicit object JSONCollectionProducer extends GenericCollectionProducer[JValue, Reader, Writer, JSONReflectionCollection] {
     def apply(db: DB, name: String, failoverStrategy: FailoverStrategy) = new JSONReflectionCollection(db, name, failoverStrategy)
   }
 

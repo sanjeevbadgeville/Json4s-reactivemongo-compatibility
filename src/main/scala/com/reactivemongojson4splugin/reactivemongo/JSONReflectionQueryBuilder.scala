@@ -23,7 +23,6 @@ package com.reactivemongojson4splugin.reactivemongo
 import com.reactivemongojson4splugin.reactivemongo.api.ReflectiveCursor
 import org.json4s._
 import reactivemongo.api._
-import reactivemongo.api.collections.GenericQueryBuilder
 import reactivemongo.core.netty.{BufferSequence, ChannelBufferWritableBuffer}
 import reactivemongo.core.protocol.{Query, QueryFlags}
 
@@ -35,10 +34,10 @@ import scala.concurrent.{ExecutionContext, Future}
 case class JSONReflectionQueryBuilder(
                                        collection: Collection,
                                        failover: FailoverStrategy,
-                                       queryOption: Option[JObject] = None,
-                                       sortOption: Option[JObject] = None,
-                                       projectionOption: Option[JObject] = None,
-                                       hintOption: Option[JObject] = None,
+                                       queryOption: Option[JValue] = None,
+                                       sortOption: Option[JValue] = None,
+                                       projectionOption: Option[JValue] = None,
+                                       hintOption: Option[JValue] = None,
                                        explainFlag: Boolean = false,
                                        snapshotFlag: Boolean = false,
                                        commentString: Option[String] = None,
@@ -52,7 +51,7 @@ case class JSONReflectionQueryBuilder(
 
   type Self = JSONReflectionQueryBuilder
 
-  def copy(queryOption: Option[JObject], sortOption: Option[JObject], projectionOption: Option[JObject], hintOption: Option[JObject], explainFlag: Boolean, snapshotFlag: Boolean, commentString: Option[String], options: QueryOpts, failover: FailoverStrategy): JSONReflectionQueryBuilder =
+  def copy(queryOption: Option[JValue], sortOption: Option[JValue], projectionOption: Option[JValue], hintOption: Option[JValue], explainFlag: Boolean, snapshotFlag: Boolean, commentString: Option[String], options: QueryOpts, failover: FailoverStrategy): JSONReflectionQueryBuilder =
     JSONReflectionQueryBuilder(collection, failover, queryOption, sortOption, projectionOption, hintOption, explainFlag, snapshotFlag, commentString, options)
 
   /**
@@ -107,11 +106,11 @@ case class JSONReflectionQueryBuilder(
    * @tparam Pjn The type of the projection. An implicit `Writer][Pjn]` typeclass for handling it has to be in the scope.
    */
   def projection[Pjn](p: Pjn)(implicit formats: Formats): Self = copy(projectionOption = Some(
-    decompose(p).asInstanceOf[JObject]
+    decompose(p)
   ))
 
   def projection(p: JValue)(implicit formats: Formats): Self = copy(projectionOption = Some(
-    p.asInstanceOf[JObject]
+    p.asInstanceOf[JValue]
   ))
 
   /**
@@ -120,11 +119,11 @@ case class JSONReflectionQueryBuilder(
    * @tparam Qry The type of the query. An implicit `Formats` typeclass for handling it has to be in the scope.
    */
   def query[Qry](selector: Qry)(implicit formats: Formats): Self = copy(queryOption = Some(
-    decompose(selector)(formats).asInstanceOf[JObject]
+    decompose(selector)(formats)
   ))
 
-  def query(jv: JValue): Self = copy(queryOption = Some(
-    jv.asInstanceOf[JObject]
+  override def query(jv: JValue): Self = copy(queryOption = Some(
+    jv
   ))
 
 }

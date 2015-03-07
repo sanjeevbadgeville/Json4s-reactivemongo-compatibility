@@ -25,18 +25,18 @@ import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter}
 
 trait LowerImplicitBSONHandlers {
 
-  implicit object JValueWriter extends BSONDocumentWriter[JObject] {
-    def write(jo: JObject) = BSONFormats.BSONDocumentFormat.read(jo)
+  implicit object JValueWriter extends BSONDocumentWriter[JValue] {
+    def write(jo: JValue) = BSONFormats.BSONDocumentFormat.read(jo)
   }
 
-  implicit object JValueReader extends BSONDocumentReader[JObject] {
-    def read(document: BSONDocument): JObject = BSONFormats.BSONDocumentFormat.write(document).asInstanceOf[JObject]
+  implicit object JValueReader extends BSONDocumentReader[JValue] {
+    def read(document: BSONDocument): JValue = BSONFormats.BSONDocumentFormat.write(document)
   }
 
 }
 
 trait ImplicitBSONHandlers extends LowerImplicitBSONHandlers {
-  implicit val formats = DefaultFormats
+  implicit val formats = BSONFormats
 
   implicit object JObjectWriter extends BSONDocumentWriter[JObject] {
     def write(obj: JObject): BSONDocument =

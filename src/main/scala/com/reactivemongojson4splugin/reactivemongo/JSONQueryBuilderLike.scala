@@ -28,14 +28,14 @@ import reactivemongo.bson.buffer.WritableBuffer
 /**
  * Created by jbarber on 2/28/15.
  */
-trait JSONQueryBuilderLike extends GenericQueryBuilder[JObject, Reader, Writer] with JSONGenericHandlers {
+trait JSONQueryBuilderLike extends GenericQueryBuilder[JValue, Reader, Writer] with JSONGenericHandlers {
 
   val collection: Collection
   val failover: FailoverStrategy
-  val queryOption: Option[JObject]
-  val sortOption: Option[JObject]
-  val projectionOption: Option[JObject]
-  val hintOption: Option[JObject]
+  val queryOption: Option[JValue]
+  val sortOption: Option[JValue]
+  val projectionOption: Option[JValue]
+  val hintOption: Option[JValue]
   val explainFlag: Boolean
   val snapshotFlag: Boolean
   val commentString: Option[String]
@@ -49,26 +49,26 @@ trait JSONQueryBuilderLike extends GenericQueryBuilder[JObject, Reader, Writer] 
   private def empty: JObject = JObject()
 
 
-  protected def writeStructureIntoBuffer[B <: WritableBuffer, T: Manifest](document: JObject, buffer: B): B = {
+  protected def writeStructureIntoBuffer[B <: WritableBuffer, T: Manifest](document: JValue, buffer: B): B = {
     JSONGenericHandlers.StructureBufferWriter.write(document, buffer)
   }
 
-  object structureReader extends Reader[JObject] {
-    def read(json: JValue): JObject = json.asInstanceOf[JObject]
+  object structureReader extends Reader[JValue] {
+    def read(json: JValue): JValue = json.asInstanceOf[JValue]
   }
 
   def convert[T](reader: Reader[T]): BufferReader[T] = JSONDocumentReaderAsBufferReader(reader)
 
-  def merge: JObject = {
+  def merge: JValue = {
     if (!sortOption.isDefined && !hintOption.isDefined && !explainFlag && !snapshotFlag && !commentString.isDefined)
       queryOption.getOrElse(JObject())
     else {
-      (JObject("$query" -> (queryOption.getOrElse(empty): JObject)) ++
+      JObject("$query" -> queryOption.getOrElse(empty)) ++
         sortOption.map(o => JObject("$orderby" -> o)).getOrElse(empty) ++
         hintOption.map(o => JObject("$hint" -> o)).getOrElse(empty) ++
         commentString.map(o => JObject("$comment" -> JString(o))).getOrElse(empty) ++
         option(explainFlag, JBool(true)).map(o => JObject("$explain" -> o)).getOrElse(empty) ++
-        option(snapshotFlag, JBool(true)).map(o => JObject("$snapshot" -> o)).getOrElse(empty)).asInstanceOf[JObject]
+        option(snapshotFlag, JBool(true)).map(o => JObject("$snapshot" -> o)).getOrElse(empty)
     }
   }
 
