@@ -36,7 +36,6 @@ trait LowerImplicitBSONHandlers {
 }
 
 trait ImplicitBSONHandlers extends LowerImplicitBSONHandlers {
-  implicit val formats = BSONFormats
 
   implicit object JObjectWriter extends BSONDocumentWriter[JObject] {
     def write(obj: JObject): BSONDocument =
