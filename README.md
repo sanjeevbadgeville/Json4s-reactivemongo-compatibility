@@ -220,8 +220,8 @@ I'm working on a way around this.  I don't know enough about how json4s works ye
 
 ##### TODO
 1. Improve BSONObjectId support with JValues.
-2. Figure out some way to leverage json4s to not have to create BSONDocumentReaders/Writers.
-3. Get reactive mongo to pull queries in to JValues instead of going BSONCollection -> JValue -> Object.
+2. ~~Figure out some way to leverage json4s to not have to create BSONDocumentReaders/Writers.~~
+3. ~~Get reactive mongo to pull queries in to JValues instead of going BSONCollection -> JValue -> Object.~~
 4. Tests
 
 ##### Currently supported:
@@ -248,5 +248,5 @@ BSONDouble   -> JDouble
 BSONLong     -> JInt (JInt is a wrapped long, so yeah.)
 BSONInteger  -> JInt
 BSONNull     -> JNull
-BSONObjectId -> JString (Will probably make a JObjectId at some point... not sure yet).
+BSONObjectId -> JString //Kinda. There's actually some special type thing going on here. I'll document it later.
 ```
